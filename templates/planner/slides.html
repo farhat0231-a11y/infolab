@@ -1,0 +1,69 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Слайдтар') }} · {{ L.title }}{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='slides.css') }}">
+<div class="spread" style="margin-bottom:12px">
+  <div><a class="small" href="{{ url_for('planner.edit', cid=cls.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ tr('Жоспар') }} · {{ cls.name }}</a>
+    <h1 style="margin:6px 0 0">{{ tr('Слайдтар') }}: {{ L.title }}</h1></div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('planner.print_slides', cid=cls.id, lid=L.id) }}?print=1" target="_blank"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>PDF</a>
+    <a class="btn" href="{{ url_for('planner.present_teacher', cid=cls.id, lid=L.id) }}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>{{ tr('Көрсету') }}</a>
+    <span class="small muted" id="savedAt" role="status"></span>
+    <button type="button" class="btn primary" id="saveBtn"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>{{ tr('Сақтау') }}</button>
+  </div>
+</div>
+<div class="sl-layout">
+  <aside class="card sl-list" aria-label="{{ tr('Слайдтар') }}">
+    <div class="row" style="margin-bottom:10px">
+      <button type="button" class="btn sm" id="addSlide"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>{{ tr('Слайд қосу') }}</button>
+      {% if has_lib %}<button type="button" class="btn sm primary" id="fromLib"><svg class="ic" aria-hidden="true"><use href="#i-library"/></svg>{{ tr('Дайын слайдтарды жүктеу') }}</button>{% endif %}
+      <button type="button" class="btn sm" id="fromTheory"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg>{{ tr('Теориядан слайд жасау') }}</button>
+    </div>
+    <ol id="slist" class="slist"></ol>
+  </aside>
+  <section class="card" id="sedit" aria-label="{{ tr('Слайд өңдеу') }}">
+    <div class="row" style="margin-bottom:8px">
+      <label for="sPhase" class="sr-only">{{ tr('Кезең') }}</label>
+      <select id="sPhase" style="width:auto">{% for k, v in phase_names.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      <button type="button" class="btn sm" data-sact="up" aria-label="{{ tr('Жоғары') }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-up"/></svg></button>
+      <button type="button" class="btn sm" data-sact="down" aria-label="{{ tr('Төмен') }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-down"/></svg></button>
+      <button type="button" class="btn sm danger" data-sact="del" aria-label="{{ tr('Өшіру') }}"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button>
+    </div>
+    <div class="sl-cols">
+      <div>
+        <label for="sMd" style="margin-top:0">{{ tr('Слайд мазмұны (markdown)') }}</label>
+        <textarea id="sMd" class="mono" rows="14"></textarea>
+        {% if ai_on %}<div class="aibar" role="group" aria-label="AI">
+          <span class="lbl">AI</span>
+          <button type="button" class="chip" data-ai="more">{{ tr('Толығырақ') }}</button>
+          <button type="button" class="chip" data-ai="example">{{ tr('Мысал қос') }}</button>
+          <button type="button" class="chip" data-ai="simple">{{ tr('Қарапайым түсіндір') }}</button>
+          <button type="button" class="chip" data-ai="short">{{ tr('Қысқарт') }}</button>
+          <input type="text" id="aiText" aria-label="{{ tr('Өз нұсқаулығыңыз') }}" placeholder="{{ tr('Өз нұсқаулығыңыз...') }}">
+          <button type="button" class="btn sm" id="aiGo">{{ tr('Орындау') }}</button>
+          <button type="button" class="btn sm" id="aiUndo" hidden>{{ tr('Қайтару') }}</button>
+        </div>{% endif %}
+        <label for="sNotes">{{ tr('Мұғалімнің сөзі') }}</label>
+        <textarea id="sNotes" rows="6" placeholder="{{ tr('Осы слайдта не айтамын?') }}"></textarea>
+      </div>
+      <div><span class="lbl">{{ tr('Алдын ала қарау') }}</span><div class="fit" id="spreview" role="img" aria-label="{{ tr('Алдын ала қарау') }}"><div class="slide"></div></div></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.SL = {
+  slides: {{ slides|tojson }},
+  saveUrl: {{ url_for('planner.slides_save', cid=cls.id, lid=L.id)|tojson }},
+  libUrl: {{ url_for('planner.slides_library', cid=cls.id, lid=L.id)|tojson }},
+  theoryUrl: {{ url_for('planner.slides_from_theory', cid=cls.id, lid=L.id)|tojson }},
+  improveUrl: {{ url_for('planner.slide_improve', cid=cls.id, lid=L.id)|tojson }},
+  previewUrl: {{ url_for('planner.preview')|tojson }},
+  t: {{ {'aiBusy': tr('Жасалуда...'), 'saved': tr('Сақталды'), 'fail': tr('Сақталмады'), 'confirm': tr('Қазіргі слайдтар ауыстырылады. Жалғастыру керек пе?'),
+         'del': tr('Слайдты өшіру керек пе?'), 'empty': tr('(бос слайд)'), 'none': tr('Слайд жоқ. «Слайд қосу» немесе «Теориядан слайд жасау» батырмасын басыңыз.')}|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='slides.js') }}"></script>
+<script src="{{ url_for('static', filename='slides-edit.js') }}"></script>
+{% endblock %}

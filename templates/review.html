@@ -1,0 +1,159 @@
+{% extends 'base.html' %}{% from '_history.html' import history %}{% block title %}Тексеру{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:12px"><h1 style="margin:0">Тексеру</h1>
+  <span class="muted">Ашық жауаптар мен практикалық жұмыстар{% if rows %} · күтуде: <b class="num">{{ rows|length }}</b>{% endif %}</span></div>
+
+<details class="card bank" style="margin-bottom:16px">
+  <summary><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Дайын пікірлер банкі (<span id="bankCount">{{ bank|length }}</span>)</summary>
+  <p class="muted small">Тексеру кезінде пікір жолының астындағы батырманы басса, мәтін сол жолға қосылады. Өз пікіріңізді жазып, «+ Банкке сақтау» батырмасын басыңыз. Банк бос болса, әдепкі пікірлер қайта қосылады.</p>
+  <div class="chips" id="bankList">
+    {% for b in bank %}<span class="chip bankchip" data-cid="{{ b.id }}">{{ b.text }}<a href="#" class="delc" data-cid="{{ b.id }}" title="Өшіру" aria-label="Өшіру"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></a></span>{% endfor %}
+  </div>
+  <div class="row" style="margin-top:12px"><label for="newComment" class="sr-only">Жаңа дайын пікір</label><input type="text" id="newComment" placeholder="Жаңа дайын пікір..." style="flex:1;min-width:220px"><button type="button" class="btn sm" id="addComment"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Қосу</button></div>
+</details>
+
+{% if classes|length > 1 %}
+<div class="seg" role="group" aria-label="Сынып" style="margin-bottom:14px">
+  <a class="{{ 'on' if not sel }}" href="{{ url_for('review') }}"{% if not sel %} aria-current="true"{% endif %}>Барлығы ({{ rows|length }})</a>
+  {% for c in classes %}<a class="{{ 'on' if sel==c.id }}" href="{{ url_for('review', c=c.id) }}"{% if sel==c.id %} aria-current="true"{% endif %}>{{ c.name }} ({{ c.rows|length }})</a>{% endfor %}
+</div>
+{% endif %}
+
+{% if not rows %}<div class="card empty"><svg class="ic" aria-hidden="true" style="width:28px;height:28px;color:var(--ok)"><use href="#i-check"/></svg><p style="margin:8px 0 0">Тексерілмеген жауап жоқ</p></div>{% endif %}
+{% for grp in shown %}
+<h2 class="class-head" style="margin:22px 0 10px;display:flex;align-items:center;gap:10px">{{ grp.name }} <span class="badge">{{ grp.rows|length }}</span></h2>
+{% for r in grp.rows %}
+{% set late = r.late_pct if r.late_pct is not none else 100 %}
+<article class="card review">
+  <div class="spread"><div><b>{{ r.name }}</b> <span class="badge">{{ r.cname }}</span> <span class="muted">{{ r.title }}</span></div>
+    <div class="row">{% if late < 100 %}<span class="badge warn" title="Мерзімнен кейін тапсырылған"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>кеш тапсырылды: ұпай × {{ late }}%</span>{% endif %}<span class="muted small num">{{ r.updated }}</span></div></div>
+  <div class="prompt" style="margin-top:10px">{{ r.prompt|md }}</div>
+  {% if r.data.rubric %}<div class="explain"><b>Ескертпе:</b> {{ r.data.rubric }}</div>{% endif %}
+  {% if r.answer is mapping and r.answer.file %}<div class="answer file"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg><a href="{{ url_for('upload_file', fn=r.answer.file) }}" target="_blank"><b>{{ r.answer.name }}</b></a>
+    <span class="muted small num">· {{ (r.answer.size / 1024)|round|int }} КБ</span>
+    {% if r.answer.file.rsplit('.', 1)[-1] in ('png','jpg','jpeg','gif','webp') %}<div style="margin-top:10px"><img src="{{ url_for('upload_file', fn=r.answer.file) }}" alt="Оқушының жұмысы" style="max-width:100%;max-height:420px;border-radius:6px"></div>{% endif %}</div>
+  {% else %}<div class="answer">{{ r.answer }}</div>{% endif %}
+  {{ history(r.hist, r.data) }}
+
+  <form method="post" style="margin-top:12px" class="rv" data-pts="{{ r.points }}" data-late="{{ late }}">
+    <input type="hidden" name="sid" value="{{ r.id }}"><input type="hidden" name="c" value="{{ sel or '' }}">
+    {% if r.data.criteria %}
+    <table class="crit-table">
+      {% for c in r.data.criteria %}
+      <tr><td>{{ c.text }}</td>
+          <td class="qset"><span class="seg" role="group" aria-label="Жылдам балл"><button type="button" data-q="0" aria-label="0 балл">0</button><button type="button" data-q="h" aria-label="Жартысы">½</button><button type="button" data-q="1" aria-label="Толық">{{ c.points }}</button></span></td>
+          <td style="white-space:nowrap"><label class="sr-only" for="c{{ r.id }}-{{ loop.index0 }}">Балл</label><input type="number" id="c{{ r.id }}-{{ loop.index0 }}" name="crit{{ loop.index0 }}" class="crit" min="0" max="{{ c.points }}" step="0.5" value="{{ c.points }}"> <span class="muted small num">/ {{ c.points }}</span></td></tr>
+      {% endfor %}
+    </table>
+    <div class="totline">Барлығы <b class="rtot num">{{ r.points }}</b> / <span class="num">{{ r.points }}</span>
+      {% if late < 100 %}<span class="muted"> · кештен кейін: </span><b class="rfinal num">{{ (r.points * late / 100)|round(2) }}</b>{% endif %}</div>
+    {% else %}
+    <div style="width:140px"><label style="margin-top:0" for="s{{ r.id }}">Балл (макс {{ r.points }})</label><input type="number" id="s{{ r.id }}" name="score" min="0" max="{{ r.points }}" step="0.5" value="{{ r.points }}" required></div>
+    {% if late < 100 %}<div class="muted small" style="margin-top:4px">Кеш тапсырылған: енгізген баллыңыз × {{ late }}% болып сақталады.</div>{% endif %}
+    {% endif %}
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1;min-width:220px"><label style="margin-top:0" for="f{{ r.id }}">Пікір (міндетті емес)</label><input type="text" id="f{{ r.id }}" name="feedback" class="fb" placeholder="Жарайсың! / Мысал келтір..."></div>
+      {% if ai_on and r.ttype == 'open' %}<button type="button" class="btn aisuggest" style="align-self:flex-end" data-sid="{{ r.id }}"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg>AI ұсынысы</button>{% endif %}
+      <button class="btn primary" style="align-self:flex-end"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Бағалау</button>
+    </div>
+    <div class="chips">
+      {% for b in bank %}<button type="button" class="chip" data-text="{{ b.text }}" data-cid="{{ b.id }}">{{ b.text }}</button>{% endfor %}
+      <button type="button" class="chip save">+ Банкке сақтау</button>
+    </div>
+  </form>
+</article>
+{% endfor %}
+{% endfor %}
+
+{% if agroups %}
+<details class="card" style="margin-top:28px"{% if not rows %} open{% endif %}>
+  <summary><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg>Сайт өзі бағалаған жұмыстар ({{ agroups|map(attribute='rows')|map('length')|sum }})</summary>
+  <p class="muted small">Excel/Word файлдары ережелер бойынша автоматты тексерілді. Баға қате болса, баллды түзетіп «Сақтау» басыңыз: бұл жұмыс «қолмен бағаланған» болады.</p>
+  {% for grp in agroups %}
+  <h3 style="margin:16px 0 8px">{{ grp.name }} <span class="badge">{{ grp.rows|length }}</span></h3>
+  {% for r in grp.rows %}
+  <form method="post" class="row" style="gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line, #e5e7eb)">
+    <input type="hidden" name="sid" value="{{ r.id }}"><input type="hidden" name="c" value="{{ sel or '' }}">
+    <div style="flex:1;min-width:240px"><b>{{ r.name }}</b> <span class="muted small">{{ r.title }}</span>
+      {% if r.answer %}{% set a = r.answer|fromjson %}{% if a is mapping and a.file %}<div class="small"><a href="{{ url_for('upload_file', fn=a.file) }}" target="_blank">{{ a.name }}</a></div>{% endif %}{% endif %}
+      <div class="small muted" style="white-space:pre-line">{{ r.feedback }}</div></div>
+    <div style="width:110px"><label class="sr-only" for="fin{{ r.id }}">Балл</label><input type="number" id="fin{{ r.id }}" name="final" min="0" max="{{ r.points }}" step="0.5" value="{{ r.score }}"> <span class="muted small num">/ {{ r.points }}</span></div>
+    <button class="btn sm"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Сақтау</button>
+  </form>
+  {% endfor %}
+  {% endfor %}
+</details>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const post = (url, body) => fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body || {})}).then(r => r.json());
+const fmt = x => Number.isInteger(x) ? String(x) : x.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+const XICON = '<svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>';
+
+// Рубрика: қосындыны және кештен кейінгі ұпайды қайта есептеу
+function recalc(f){
+  const inputs = f.querySelectorAll('input.crit'); if(!inputs.length) return;
+  const tot = [...inputs].reduce((a, i) => a + Math.max(0, Math.min(+i.value || 0, +i.max)), 0);
+  f.querySelector('.rtot').textContent = fmt(tot);
+  const fin = f.querySelector('.rfinal'); if(fin) fin.textContent = fmt(tot * (+f.dataset.late) / 100);
+}
+document.querySelectorAll('form.rv').forEach(f => f.querySelectorAll('input.crit').forEach(i => i.oninput = () => recalc(f)));
+
+// AI баға ұсынысы (ашық жауап): критерийлерге балл мен пікірді толтырады, мұғалім тексеріп бекітеді
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.aisuggest'); if(!b) return;
+  b.disabled = true; const old = b.innerHTML; b.textContent = 'AI ойланып жатыр...';
+  try {
+    const r = await post('/teacher/review/' + b.dataset.sid + '/suggest');
+    if(r.error){ toast(r.error); return; }
+    const f = b.closest('form');
+    const inputs = f.querySelectorAll('input.crit');
+    if(inputs.length) inputs.forEach((i, k) => { i.value = r.scores[k]; }); else { const sc = f.querySelector('input[name=score]'); if(sc) sc.value = r.scores[0]; }
+    recalc(f);
+    const fb = f.querySelector('.fb'); if(fb && r.feedback) fb.value = r.feedback;
+    toast('AI ұсынысы толтырылды: тексеріп, «Бағалау» басыңыз');
+  } catch(err){ toast('AI қолжетімсіз'); }
+  finally { b.disabled = false; b.innerHTML = old; }
+});
+
+// Дайын пікірлер
+function addChip(c){
+  document.querySelectorAll('form.rv .chips').forEach(box => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip';
+    b.dataset.text = c.text; b.dataset.cid = c.id; b.textContent = c.text;
+    box.insertBefore(b, box.querySelector('.chip.save'));
+  });
+  const s = document.createElement('span'); s.className = 'chip bankchip'; s.dataset.cid = c.id; s.textContent = c.text;
+  const x = document.createElement('a'); x.href = '#'; x.className = 'delc'; x.dataset.cid = c.id; x.title = 'Өшіру'; x.setAttribute('aria-label', 'Өшіру'); x.innerHTML = XICON;
+  s.appendChild(x);
+  document.getElementById('bankList').appendChild(s);
+  document.getElementById('bankCount').textContent = document.querySelectorAll('#bankList .chip').length;
+}
+async function addComment(text){
+  const r = await post('/teacher/comments/add', {text});
+  if(r.error) return toast(r.error);
+  if(r.dup) return toast('Бұл пікір банкте бар');
+  addChip(r); toast('Банкке сақталды');
+}
+document.getElementById('addComment').onclick = () => {
+  const i = document.getElementById('newComment'); if(i.value.trim()){ addComment(i.value.trim()); i.value = ''; }
+};
+document.addEventListener('click', async e => {
+  const q = e.target.closest('.qset button');
+  if(q){
+    const row = q.closest('tr'), inp = row.querySelector('input.crit'), max = +inp.max;
+    inp.value = q.dataset.q === '0' ? 0 : q.dataset.q === 'h' ? max / 2 : max;
+    recalc(q.closest('form')); return;
+  }
+  const c = e.target.closest('button.chip[data-text]');
+  if(c){ const f = c.closest('form').querySelector('.fb'); f.value = (f.value ? f.value + ' ' : '') + c.dataset.text; f.focus(); return; }
+  const sv = e.target.closest('.chip.save');
+  if(sv){ const f = sv.closest('form').querySelector('.fb'); if(f.value.trim()) addComment(f.value.trim()); else toast('Алдымен пікір жазыңыз'); return; }
+  const d = e.target.closest('.delc');
+  if(d){ e.preventDefault(); await post('/teacher/comments/' + d.dataset.cid + '/delete');
+    document.querySelectorAll('[data-cid="' + d.dataset.cid + '"]').forEach(n => n.remove());
+    document.getElementById('bankCount').textContent = document.querySelectorAll('#bankList .chip').length; }
+});
+</script>
+{% endblock %}

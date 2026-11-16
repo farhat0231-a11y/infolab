@@ -1,0 +1,23 @@
+/* Слайдтар: 16:9, 1280×720 өлшемінде жобаланған, көрсетуде масштабталады. Артқы партадан оқылатын ірі қаріп */
+.slide{width:1280px;height:720px;background:#fff;color:#16242a;padding:56px 72px 56px 88px;position:relative;overflow:hidden;font:40px/1.4 var(--font);text-align:left}
+.slide::before{content:"";position:absolute;left:0;top:0;bottom:0;width:22px;background:var(--shell)}
+.slide::after{content:"";position:absolute;left:22px;top:0;bottom:0;width:8px;background:var(--amber)}
+.slide h1{font-size:76px;line-height:1.1;margin:120px 0 28px;color:var(--shell);letter-spacing:-.02em}
+.slide h1 + p,.slide h1 + ul{font-size:36px;color:var(--muted)}
+.slide h2{font-size:56px;line-height:1.15;margin:0 0 28px;color:var(--shell)}
+.slide h3{font-size:44px;margin:0 0 16px;color:var(--accent)}
+.slide p{margin:0 0 20px}
+.slide ul,.slide ol{margin:0 0 20px;padding-left:1.1em}
+.slide li{margin-bottom:10px}
+.slide strong{color:var(--shell)}
+.slide code{font:.82em var(--mono);background:var(--accent-soft);padding:0 .25em;border-radius:6px}
+.slide pre.code{background:var(--code-bg);color:var(--code-ink);font:32px/1.5 var(--mono);padding:24px 32px;border-radius:14px;margin:0 0 20px;white-space:pre;overflow:hidden}
+.slide pre.code code{background:none;padding:0;font:inherit}
+.slide table{border-collapse:collapse;font-size:34px;margin:0 0 20px}
+.slide th,.slide td{border:2px solid var(--line-strong);padding:8px 22px;text-align:left}
+.slide th{background:var(--shell);color:#fff}
+.slide img{max-width:100%;max-height:420px;border-radius:10px}
+.tk-kw{color:#ff9e64}.tk-bi{color:#7dcfff}.tk-str{color:#9ece6a}.tk-num{color:#ffd166}.tk-com{color:#9fb4ae;font-style:italic}.tk-lit{color:#ff8a8a}
+/* Масштабтау қорабы: .slide ішіндегі ақ парақты ата-ананың өлшеміне сыйғызады (slides.js fit) */
+.fit{position:relative;overflow:hidden;background:#fff;border:1px solid var(--line-strong);border-radius:6px}
+.fit .slide{transform-origin:0 0;position:absolute;left:0;top:0}

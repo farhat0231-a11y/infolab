@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Оқулықтар') }}{% endblock %}
+{% block body %}
+<h1>{{ tr('Оқулықтар') }}</h1>
+{% if g.user.role == 'teacher' %}
+<form class="card" method="post" action="{{ url_for('book_upload') }}" enctype="multipart/form-data" style="margin-bottom:16px">
+  <h3>Оқулық жүктеу (PDF)</h3>
+  <div class="grid g4">
+    <div><label for="bk-grade" style="margin-top:0">Сынып</label><select id="bk-grade" name="grade">{% for gr in range(7,12) %}<option>{{ gr }}</option>{% endfor %}</select></div>
+    <div><label for="bk-lang" style="margin-top:0">Тілі</label><select id="bk-lang" name="lang"><option value="kk">Қазақша</option><option value="ru">Орысша</option></select></div>
+    <div style="grid-column:span 2"><label for="bk-title" style="margin-top:0">Атауы</label><input type="text" id="bk-title" name="title" placeholder="Информатика 7-сынып (Қадырқұлов)"></div>
+  </div>
+  <div class="row" style="margin-top:14px"><label for="bk-file" class="sr-only">PDF файл</label><input type="file" id="bk-file" name="file" accept="application/pdf" required><button class="btn primary"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Жүктеу</button></div>
+</form>
+{% endif %}
+<div class="grid g3">
+{% for b in rows %}
+  <div class="card">
+    <div class="badge blue">{{ tr('{n}-сынып').format(n=b.grade) }} · {{ tr('Қазақша' if b.lang=='kk' else 'Орысша') }}</div>
+    <h3 style="margin:12px 0"><svg class="ic" aria-hidden="true" style="color:var(--accent)"><use href="#i-book"/></svg> {{ b.title }}</h3>
+    <div class="row"><a class="btn sm primary" href="{{ url_for('book_file', bid=b.id) }}" target="_blank">{{ tr('Ашу') }}<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></a>
+    {% if g.user.role == 'teacher' %}<form method="post" action="{{ url_for('book_delete', bid=b.id) }}" onsubmit="return confirm('Өшіру керек пе?')"><button class="btn sm danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Өшіру</button></form>{% endif %}</div>
+  </div>
+{% else %}<div class="card empty" style="grid-column:1/-1">{{ tr('Оқулықтар әлі жүктелмеген') }}</div>{% endfor %}
+</div>
+{% endblock %}

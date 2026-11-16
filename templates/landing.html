@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="{{ view_lang() }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ tr('Информатика · сабақ кестесі') }} · InfoLab</title>
+<meta name="description" content="{{ tr('7–11 сыныптардың информатикасы: теория, тапсырмалар, Python кодын автоматты тексеру, журнал. Интернетсіз, қазақша және орысша.') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b3f8f'/%3E%3Crect x='5' y='7' width='22' height='5' fill='%23ffd23f'/%3E%3Crect x='5' y='15' width='10' height='10' fill='%23fff'/%3E%3Crect x='17' y='15' width='10' height='10' fill='%23fff' stroke='%23e8312a' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#login">{{ tr('Кіруге өту') }}</a>
+{% include '_icons.html' %}
+{% set cur = view_lang() %}
+<main class="board" id="main">
+  <nav class="lang" aria-label="{{ tr('Тіл') }}"><a href="{{ url_for('set_lang', code='kk', next='/') }}" class="pl-s{{ ' on' if cur == 'kk' }}"{% if cur == 'kk' %} aria-current="true"{% endif %}>Қаз</a><a href="{{ url_for('set_lang', code='ru', next='/') }}" class="pl-s{{ ' on' if cur == 'ru' }}"{% if cur == 'ru' %} aria-current="true"{% endif %}>Рус</a></nav>
+
+  <header class="b-head">
+    <h1>{{ tr('Информатика') }}&nbsp;<span>·</span> {{ tr('сабақ кестесі') }}</h1>
+    <p class="strip"><span class="pl-y">{{ quarter }}-{{ tr('тоқсан') }}</span><span class="pl-w">{{ tr('интернетсіз') }} · {{ tr('қаз / рус') }}</span></p>
+  </header>
+
+  <section class="grid" aria-label="{{ tr('Сабақтар кестесі') }}">
+    <div class="nums" aria-hidden="true"><span class="n0"></span>{% for i in range(1, 5) %}<span>{{ i }}</span>{% endfor %}</div>
+    {% for c in cols %}
+    <div class="col">
+      <h2 class="g">{{ c.grade }} {{ tr('сынып') }}</h2>
+      <ul>
+      {% for r in c.rows %}
+        <li><a class="plate{{ ' now' if r.id == now_id }}" href="{{ url_for('login', next='/lesson/' ~ r.id) }}"{% if r.id == now_id %} data-now{% endif %}>
+          <small class="r1">{{ c.grade }} {{ tr('сынып') }}{% if r.id == now_id %} · <b>{{ tr('қазір') }}</b>{% endif %}</small>
+          <span class="r2 no"><span class="sr">{{ tr('Сабақ') }} </span>№{{ r.num }}</span>
+          <small class="r3">{{ r.kind }}</small>
+        </a></li>
+      {% else %}
+        <li><span class="plate empty"><span class="r2">{{ tr('Сабақ әлі қосылмаған') }}</span></span></li>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+
+    <aside class="login" id="login" aria-labelledby="login-h">
+      <h2 id="login-h">{{ tr('Сабаққа кіру') }}</h2>
+      {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<p class="flash {{ cat }}" role="{{ 'alert' if cat == 'error' else 'status' }}">{{ m }}</p>{% endfor %}{% endwith %}
+      <form method="post" action="{{ url_for('login') }}">
+        <label for="l-user">{{ tr('Логин') }}</label>
+        <input type="text" id="l-user" name="username" required autocomplete="off" autocapitalize="none" spellcheck="false">
+        <label for="l-pass">{{ tr('Құпия сөз') }}</label>
+        <input type="password" id="l-pass" name="password" required autocomplete="current-password">
+        <button class="go">{{ tr('Кіру') }}</button>
+      </form>
+      <p class="reg">{{ tr('Аккаунт жоқ па?') }} <a href="{{ url_for('register') }}">{{ tr('Сынып кодымен тіркел') }}</a></p>
+      <p class="forgot">{{ tr('Құпия сөзді ұмытсаң, мұғаліміңе айт: ол жаңа құпия сөз береді.') }}</p>
+    </aside>
+    <span class="lamp" aria-hidden="true"></span>
+  </section>
+
+  <section class="band demo" aria-labelledby="demo-h">
+    <h2 class="g wide" id="demo-h">{{ tr('Тексеріп көріңіз: кодты сайт өзі тексереді') }}</h2>
+    <div class="demo-in">
+      <div class="plate big">
+        <p class="task">{{ tr('Бүтін сан n енгізіледі. Оның квадратын шығарыңыз.') }}</p>
+        <label for="demo-code" class="sr">{{ tr('Python коды') }}</label>
+        <textarea id="demo-code" spellcheck="false" autocomplete="off" autocapitalize="off" rows="4">n = int(input())
+print(n + n)</textarea>
+        <div class="row"><button class="go" id="demo-run" type="button">{{ tr('Тексеру') }}</button><span class="hint">{{ tr('Қатені түзетіп, қайта тексеріңіз: n * n') }}</span></div>
+      </div>
+      <ol class="tests" id="demo-tests" aria-live="polite">
+        {% for t in [('3','9'),('12','144'),('-5','25')] %}
+        <li class="plate t"><small class="r1">{{ tr('Тест') }} {{ loop.index }}</small><span class="r2"><code>{{ t[0] }}</code> → <code>{{ t[1] }}</code></span><small class="r3"><i class="stamp todo" aria-hidden="true"></i><span class="st">{{ tr('тексерілмеді') }}</span></small></li>
+        {% endfor %}
+        <li class="plate score" id="demo-score"><small class="r1">{{ tr('Балл') }}</small><span class="r2 num">–/3</span><i class="stamp todo big" aria-hidden="true"></i></li>
+      </ol>
+    </div>
+    <ul class="legend" aria-label="{{ tr('Ұяшық күйлері') }}">
+      <li><i class="stamp todo"></i>{{ tr('орындалмаған') }}</li>
+      <li><i class="stamp wait"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></i>{{ tr('тексеруде') }}</li>
+      <li><i class="stamp ok"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></i>{{ tr('дұрыс') }}</li>
+      <li><i class="stamp part"><b>½</b></i>{{ tr('жартылай') }}</li>
+      <li><i class="stamp bad"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></i>{{ tr('қате') }}</li>
+    </ul>
+    <p class="note">{{ tr('Бұл көрсетілім: нәтиже ешқайда сақталмайды. Сабақта дәл осылай әр тапсырмаға тесттер жүреді, балл журналға түседі.') }}</p>
+  </section>
+
+  <section class="band key" aria-labelledby="types-h">
+    <h2 class="g wide" id="types-h">{{ tr('Тапсырманың 6 түрі') }}</h2>
+    <dl class="sheet types">
+      <div><dt>{{ tr('Тест') }}</dt><dd>{{ tr('бір дұрыс жауап, бірден тексеріледі') }}</dd></div>
+      <div><dt>{{ tr('Бірнеше жауап') }}</dt><dd>{{ tr('ішінара балл беріледі') }}</dd></div>
+      <div><dt>{{ tr('Қысқа жауап') }}</dt><dd>{{ tr('сан немесе сөз, 2 әрекет') }}</dd></div>
+      <div><dt>Python</dt><dd>{{ tr('код сайттың ішінде тесттермен тексеріледі') }}</dd></div>
+      <div><dt>{{ tr('Ашық жауап') }}</dt><dd>{{ tr('мұғалім рубрика бойынша бағалайды') }}</dd></div>
+      <div><dt>{{ tr('Файл') }}</dt><dd>{{ tr('Excel, Word жұмысы ереже бойынша өзі тексеріледі') }}</dd></div>
+    </dl>
+  </section>
+
+  <div class="band duo">
+    <section class="notice" aria-labelledby="teach-h">
+      <h2 id="teach-h">{{ tr('Мұғалімге') }}</h2>
+      <ul>
+        <li><b>{{ tr('Файлдарды автотексеру') }}</b> — {{ tr('сайт бағалаған жұмысты мұғалім қаласа түзетеді') }}</li>
+        <li><b>{{ tr('Рубрика мен дайын пікірлер') }}</b> — {{ tr('ашық жауап бірнеше басуда бағаланады') }}</li>
+        <li><b>{{ tr('Журнал мен тоқсандық баға') }}</b> — {{ tr('баға өзі есептеледі, Excel-ге жүктеледі') }}</li>
+        <li><b>{{ tr('Жауаптар тарихы') }}</b> — {{ tr('әр әрекет және беттен шығу белгісі көрінеді') }}</li>
+        <li><b>{{ tr('Сабаққа дайындық') }}</b> — {{ tr('ҚМЖ мен слайдтарды дайындау') }}</li>
+      </ul>
+    </section>
+    <section class="howto" aria-labelledby="how-h">
+      <h2 class="g wide" id="how-h">{{ tr('Қалай қосылу') }}</h2>
+      <ol class="steps">
+        <li><b class="k">1</b><span>{{ tr('Мектеп желісінде infolab.local ашыңыз') }}</span></li>
+        <li><b class="k">2</b><span>{{ tr('Мұғалім берген сынып кодымен тіркеліңіз') }} <a href="{{ url_for('register') }}">{{ tr('Тіркелу') }}</a></span></li>
+        <li><b class="k">3</b><span>{{ tr('Ашылған сабақты таңдап, тапсырманы орындаңыз') }} <a href="#login">{{ tr('Кіру') }}</a></span></li>
+      </ol>
+    </section>
+  </div>
+
+  <footer class="b-foot"><span>InfoLab</span><span>{{ tr('Информатика, 7–11 сыныптар · интернетсіз жұмыс істейді') }}</span></footer>
+</main>
+<script>
+window.I18N = {{ js_i18n()|tojson }};
+window.L10N = {ok: {{ tr('өтті')|tojson }}, bad: {{ tr('өтпеді')|tojson }}, wait: {{ tr('тексерілуде...')|tojson }}, fail: {{ tr('Сервермен байланыс жоқ')|tojson }}};
+</script>
+<script src="{{ url_for('static', filename='landing.js') }}"></script>
+</body></html>

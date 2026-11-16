@@ -1,0 +1,73 @@
+{% extends 'base.html' %}{% block title %}{{ tr('ҚМЖ') }} · {{ L.title }}{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+<div class="spread" style="margin-bottom:12px">
+  <div><a class="small" href="{{ url_for('planner.klass', cid=cls.id, q=L.quarter) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ cls.name }} · {{ tr('{n}-тоқсан').format(n=L.quarter) }}</a>
+    <h1 style="margin:6px 0 0">{{ L.title }}</h1></div>
+  <div class="row">
+    {% if plan %}<a class="btn" href="{{ url_for('planner.export_docx', cid=cls.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>{{ tr('Word (.docx)') }}</a>{% endif %}
+    {% if ai_on %}<button type="button" class="btn" id="aiBtn"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span id="aiLbl">{{ tr('Жоспар жасау') }} (AI)</span></button>{% endif %}
+    <a class="btn" href="{{ url_for('planner.slides_edit', cid=cls.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>{{ tr('Слайд') }}</a>
+    <a class="btn" href="{{ url_for('planner.present_teacher', cid=cls.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>{{ tr('Көрсету') }}</a>
+    <span class="small muted" id="savedAt" role="status"></span>
+    <button type="button" class="btn primary" id="saveBtn"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>{{ tr('Сақтау') }}</button>
+  </div>
+</div>
+
+<section class="card" aria-label="{{ tr('Жалпы мәлімет') }}">
+  <div class="plan-head">
+    <div><label for="f-section">{{ tr('Бөлім') }}</label><input type="text" id="f-section" value="{{ L.section }}" readonly></div>
+    <div><label for="f-teacher">{{ tr('Педагогтің аты-жөні') }}</label><input type="text" id="f-teacher" value="{{ g.user.name }}" readonly></div>
+    <div><label for="f-date">{{ tr('Күні') }}</label><input type="date" id="f-date" value="{{ info.date }}"></div>
+    <div><label for="f-class">{{ tr('Сынып') }}</label><input type="text" id="f-class" value="{{ cls.name }}" readonly></div>
+    <div><label for="f-present">{{ tr('Қатысушылар саны') }}</label><input type="number" id="f-present" value="{{ [students - info.absent, 0]|max }}" readonly></div>
+    <div><label for="f-absent">{{ tr('Қатыспағандар саны') }}</label><input type="number" id="f-absent" min="0" value="{{ info.absent }}"></div>
+  </div>
+  <label for="f-obj">{{ tr('Оқу бағдарламасына сәйкес оқу мақсаттары') }}</label>
+  <textarea id="f-obj" rows="2">{{ info.objectives }}</textarea>
+  <label for="f-aim">{{ tr('Сабақтың мақсаты') }}</label>
+  <textarea id="f-aim" rows="2" placeholder="{{ tr('Сабақ соңында оқушы не істей алады?') }}">{{ info.aim }}</textarea>
+</section>
+
+<section class="card tl-card" aria-label="{{ tr('Уақыт сызбасы') }}">
+  <div class="spread"><h2 style="margin:0">{{ tr('Сабақтың барысы') }}</h2><div id="tlSum" class="tl-sum num" role="status"></div></div>
+  <div class="tl" id="timeline" aria-hidden="true"></div>
+  <p class="small muted" style="margin:8px 0 0">{{ tr('Қадамдарды сүйреп немесе көрсеткілермен жылжытыңыз. Барлық уақыттың қосындысы 40 минут болуы керек.') }}</p>
+</section>
+
+<div id="phases"></div>
+
+<section class="card row" style="margin-top:16px;justify-content:space-between">
+  <div class="row">
+    {% if others and plan %}
+    <form method="post" action="{{ url_for('planner.copy', cid=cls.id, lid=L.id) }}" class="row">
+      <label for="copyTo" class="sr-only">{{ tr('Басқа сыныпқа көшіру') }}</label>
+      <select id="copyTo" name="to" style="width:auto">{% for o in others %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}</select>
+      <button class="btn">{{ tr('Басқа сыныпқа көшіру') }}</button>
+    </form>{% endif %}
+  </div>
+  {% if plan %}<form method="post" action="{{ url_for('planner.remove', cid=cls.id, lid=L.id) }}" onsubmit="return confirm('{{ tr('Жоспарды өшіру керек пе?') }}')"><button class="btn danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>{{ tr('Жоспарды өшіру') }}</button></form>{% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+window.PLAN = {
+  saveUrl: {{ url_for('planner.save', cid=cls.id, lid=L.id)|tojson }},
+  aiUrl: {{ url_for('planner.ai_generate', cid=cls.id, lid=L.id)|tojson }},
+  slidesSaveUrl: {{ url_for('planner.slides_save', cid=cls.id, lid=L.id)|tojson }},
+  total: {{ total }}, students: {{ students }},
+  stages: {{ stages|tojson }},
+  tasks: {{ task_list|tojson }},
+  phaseNames: {{ phase_names|tojson }},
+  uiNames: {{ {'start': tr('Сабақтың басы'), 'middle': tr('Сабақтың ортасы'), 'end': tr('Сабақтың соңы')}|tojson }},
+  t: {{ {
+    'addStep': tr('Қадам қосу'), 'del': tr('Өшіру'), 'up': tr('Жоғары'), 'down': tr('Төмен'), 'drag': tr('Сүйреу'),
+    'title': tr('Қадам атауы'), 'min': tr('мин'), 'teacher': tr('Педагогтің әрекеті'), 'student': tr('Оқушының әрекеті'),
+    'assess': tr('Бағалау (дескриптор, кері байланыс түрі)'), 'res': tr('Ресурстар'), 'tasks': tr('InfoLab тапсырмалары'),
+    'saved': tr('Сақталды'), 'aiBusy': tr('Жасалуда...'), 'aiConfirm': tr('Қазіргі қадамдар, мақсат және слайдтар AI нұсқасымен ауыстырылады. Жалғастыру керек пе?'), 'aiDone': tr('Дайын: тексеріп, түзетіңіз'), 'fail': tr('Сақталмады'), 'over': tr('Артық'), 'under': tr('Жетіспейді'), 'ok': tr('Уақыт сәйкес'),
+    'left': tr('қалды'), 'confirmDel': tr('Қадамды өшіру керек пе?'), 'empty': tr('Қадам жоқ')
+  }|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='planner.js') }}"></script>
+{% endblock %}

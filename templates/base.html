@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="{{ view_lang() }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Информатика{% endblock %} · InfoLab</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317454b'/%3E%3Crect x='5' y='8' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='13' y='8' width='6' height='6' rx='1.5' fill='%23ffd166'/%3E%3Crect x='21' y='8' width='6' height='6' rx='1.5' fill='%23ff8a8a'/%3E%3Crect x='5' y='18' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='13' y='18' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='21' y='18' width='6' height='6' rx='1.5' fill='%233a6a71'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">{{ tr('Мазмұнға өту') }}</a>
+{% include '_icons.html' %}
+{% macro nl(href, label, on, icon) %}<a href="{{ href }}"{% if on %} class="on" aria-current="page"{% endif %}><svg class="ic" aria-hidden="true"><use href="#i-{{ icon }}"/></svg><span>{{ label }}</span></a>{% endmacro %}
+{% if g.user %}
+<header class="top"><div class="in">
+  <a class="logo" href="{{ url_for('home') }}"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-mark"/></svg>InfoLab</a>
+  <nav class="nav" aria-label="{{ tr('Негізгі мәзір') }}">
+  {% set p = request.path %}
+  {% if g.user.role == 'teacher' %}
+    {{ nl(url_for('teacher_home'), 'Сыныптар', p.startswith('/teacher') and not p.startswith('/teacher/lesson') and not p.startswith('/teacher/review') and not p.startswith('/teacher/planner'), 'users') }}
+    {{ nl(url_for('lessons_admin'), 'Сабақтар', p.startswith('/teacher/lesson'), 'book') }}
+    {{ nl(url_for('planner.index'), tr('Сабаққа дайындық'), p.startswith('/teacher/planner'), 'spark') }}
+    {{ nl(url_for('review'), 'Тексеру', p.startswith('/teacher/review'), 'review') }}
+    {{ nl(url_for('books'), 'Оқулықтар', p.startswith('/books'), 'library') }}
+  {% else %}
+    {{ nl(url_for('home'), tr('Сабақтар'), p == '/' or p.startswith('/lesson'), 'book') }}
+    {{ nl(url_for('my_grades'), tr('Бағаларым'), p.startswith('/grades'), 'grades') }}
+    {{ nl(url_for('leaderboard_page'), tr('Рейтинг'), p.startswith('/leaderboard'), 'trophy') }}
+    {{ nl(url_for('books'), tr('Оқулықтар'), p.startswith('/books'), 'library') }}
+  {% endif %}
+  </nav>
+  <div class="who">
+    <span class="langsw small">{% set cur = view_lang() %}<a href="{{ url_for('set_lang', code='kk', next=request.full_path) }}" class="{{ 'on' if cur == 'kk' }}">Қаз</a><a href="{{ url_for('set_lang', code='ru', next=request.full_path) }}" class="{{ 'on' if cur == 'ru' }}">Рус</a></span>
+    {% if g.user.role == 'student' %}<span class="badge xp" id="nav-xp"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><b>{{ g.user_xp if g.user_xp is defined else '' }}</b></span>{% endif %}
+    <span class="uname">{{ g.user.name }}</span>
+    <a class="btn sm" href="{{ url_for('logout') }}"><svg class="ic" aria-hidden="true"><use href="#i-logout"/></svg><span class="lbl">{{ tr('Шығу') }}</span></a>
+  </div>
+</div></header>
+{% endif %}
+<main id="main" tabindex="-1">
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}<div class="flash {{ c }}" role="{{ 'alert' if c == 'error' else 'status' }}">{{ m }}</div>{% endfor %}{% endwith %}
+  {% block body %}{% endblock %}
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+window.I18N = {{ js_i18n()|tojson }};
+const T = s => window.I18N[s] || s;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

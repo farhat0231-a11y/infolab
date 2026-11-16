@@ -1,0 +1,441 @@
+/* InfoLab: «олимпиада нәтиже кестесі» дизайн жүйесі. Түсіндірме: DESIGN.md */
+:root{
+  /* Қабық (жоғарғы жол, авторизация панелі) */
+  --shell:#0e2a2f; --shell-2:#17454b; --shell-line:#2c6169; --shell-ink:#eef6f3; --shell-muted:#b9d2cb; --shell-accent:#ffd166;
+  /* Беттер мен мәтін */
+  --bg:#eef2f0; --surface:#ffffff; --surface-2:#f4f7f5; --ink:#16242a; --muted:#52646b; --line:#d5ddd9; --line-strong:#b4c2bb;
+  /* Сілтеме және белсенді элемент */
+  --accent:#0b6b74; --accent-soft:#e0f1f2; --accent-line:#a9d3d6;
+  /* Вердикт түстері: мәтін ретінде де, ақ мәтінді фон ретінде де жарамды */
+  --ok:#157a49; --ok-soft:#e3f2ea; --ok-line:#a8d6bd;
+  --warn:#8a5200; --warn-soft:#fdf1d6; --warn-line:#f0d28d; --amber:#e8a21a; --amber-soft:#faefd2;
+  --bad:#b32f2f; --bad-soft:#fbe9e9; --bad-line:#ebb7b7;
+  --todo:#dfe6e3; --todo-ink:#3d4f56;
+  --code-bg:#0f1d21; --code-ink:#e6f1ee; --code-bar:#16292e;
+  /* Ескі атаулармен үйлесімділік (шаблондардағы inline стильдер) */
+  --brand:var(--accent); --brand-soft:var(--accent-soft); --brand-ink:#fff; --gold:var(--amber);
+  /* Өлшемдер */
+  --radius:8px; --radius-sm:4px; --radius-cell:6px;
+  --font:"Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --pop:0 6px 20px rgba(14,42,47,.18);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scrollbar-color:#8fa69e transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--font)}
+::selection{background:#bfe7d4;color:var(--shell)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:.18em}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.top :focus-visible,.auth .art :focus-visible{outline-color:var(--shell-accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .6em;text-wrap:balance}
+h1{font-size:clamp(1.65rem,1.1rem + 1.6vw,2.25rem);letter-spacing:-.015em;font-weight:750}
+h2{font-size:1.375rem;letter-spacing:-.01em;font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:8px;top:-60px;background:var(--shell);color:#fff;padding:10px 16px;border-radius:6px;z-index:100;font-weight:600}
+.skip:focus{top:8px;text-decoration:none}
+.ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* Жоғарғы жол */
+.top{background:var(--shell);color:var(--shell-ink);border-bottom:1px solid #081a1d;position:sticky;top:0;z-index:20}
+.top .in{max-width:1240px;margin:0 auto;padding:0 20px;min-height:56px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem;color:#fff;letter-spacing:-.01em}
+.logo:hover{text-decoration:none}
+.logo .mark{width:30px;height:30px;flex:none;display:block}
+.nav{display:flex;gap:2px;flex:1;align-self:stretch}
+.nav a{display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--shell-muted);font-weight:600;border-bottom:3px solid transparent}
+.nav a:hover{background:var(--shell-2);color:#fff;text-decoration:none}
+.nav a.on{color:#fff;border-bottom-color:var(--shell-accent)}
+.who{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--shell-ink)}
+.top .btn{background:transparent;color:var(--shell-ink);border-color:var(--shell-line)}
+.top .btn:hover{background:var(--shell-2)}
+.top .langsw{border-color:var(--shell-line);background:transparent}
+.top .langsw a{color:var(--shell-muted);opacity:1}
+.top .langsw a.on{background:var(--shell-2);color:#fff}
+.top .badge.xp{background:var(--shell-2);border-color:var(--shell-line);color:var(--shell-accent)}
+.langsw{display:inline-flex;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;background:var(--surface)}
+.langsw a{padding:4px 10px;color:var(--muted);font-weight:600}
+.langsw a:hover{text-decoration:none;background:var(--surface-2)}
+.langsw a.on{background:var(--shell);color:#fff}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:var(--radius-sm);background:var(--surface-2);border:1px solid var(--line);font-size:.8rem;font-weight:650;white-space:nowrap;color:var(--ink)}
+.badge.xp{background:var(--amber-soft);border-color:var(--warn-line);color:var(--warn);font-family:var(--mono)}
+.badge.ok{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);border-color:var(--bad-line);color:var(--bad)}
+.badge.blue{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent)}
+
+main{max-width:1240px;margin:0 auto;padding:28px 20px 64px}
+main:focus{outline:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.card + .card{margin-top:16px}
+.grid > .card + .card{margin-top:0}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.side{grid-template-columns:minmax(0,1fr) 330px;align-items:start}
+@media (max-width:900px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.side{grid-template-columns:1fr}}
+@media (max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}.who .uname{display:none}}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* Батырмалар мен формалар */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 16px;border-radius:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-family:inherit;font-size:.95rem;font-weight:650;line-height:1.2;cursor:pointer;text-decoration:none!important;white-space:nowrap}
+.btn:hover{background:var(--surface-2);border-color:#97a9a1}
+.btn.primary{background:var(--shell);border-color:var(--shell);color:#fff}
+.btn.primary:hover{background:var(--shell-2);border-color:var(--shell-2)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--bad);border-color:var(--bad-line)}
+.btn.sm{min-height:32px;padding:4px 10px;font-size:.85rem;border-radius:5px}
+.btn.block{width:100%;margin-top:20px;min-height:46px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+label{display:block;font-weight:650;font-size:.9rem;margin:14px 0 6px}
+input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font:inherit;color:var(--ink)}
+input[type=file]{font:inherit;max-width:100%}
+input::placeholder,textarea::placeholder{color:#6b7c83}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+textarea{min-height:90px;resize:vertical}
+input[type=radio],input[type=checkbox]{accent-color:var(--shell)}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:3px;gap:2px}
+.seg a,.seg label{margin:0;padding:6px 12px;border-radius:4px;color:var(--ink);font-weight:650;font-size:.875rem;cursor:pointer}
+.seg a:hover{text-decoration:none;background:#fff}
+.seg a.on,.seg input:checked+span{background:var(--shell);color:#fff}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.seg label span{display:block;padding:0;border-radius:4px}
+.flash{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:6px;margin-bottom:14px;font-weight:550;border:1px solid transparent}
+.flash.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok-line)}
+.flash.error{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)}
+
+/* Тапсырма жолағы және ұяшықтар: жүйенің басты белгісі */
+.strip{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.cell{display:flex;flex-direction:column;justify-content:space-between;width:86px;height:54px;padding:6px 9px;border-radius:var(--radius-cell);border:2px solid transparent;background:var(--todo);color:var(--todo-ink);font:700 12px/1 var(--mono);font-variant-numeric:tabular-nums}
+.cell b{font-size:16px;font-weight:700}
+.cell.ok{background:var(--ok);color:#fff}
+.cell.bad{background:var(--bad);color:#fff}
+.cell.part{background:linear-gradient(to top,var(--amber) var(--fill,50%),var(--amber-soft) var(--fill,50%));color:#3a2a00}
+.cell.wait{background:repeating-linear-gradient(135deg,#f3e3b5 0 6px,var(--amber-soft) 6px 12px);color:#3a2a00}
+.cell.cur{background:#fff;border-color:var(--shell);color:var(--shell)}
+.strip.sm .cell{width:58px;height:42px;padding:4px 7px;font-size:11px}
+.strip.sm .cell b{font-size:13px}
+
+/* Кіру беті */
+main.auth,.auth{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;max-width:none;margin:0;padding:0}
+.auth .art{background-color:var(--shell);color:var(--shell-ink);padding:48px;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.auth .art h1{color:#fff;font-size:clamp(1.9rem,1rem + 2.2vw,2.75rem);max-width:520px;margin:22px 0 .5em}
+.auth .art p{color:var(--shell-muted);max-width:460px;margin:0}
+.auth .art .strip{margin-bottom:6px}
+.auth .art .code{font:13px/1.7 var(--mono);background:rgba(0,0,0,.28);border:1px solid var(--shell-line);border-radius:6px;padding:16px;max-width:420px;white-space:pre;color:#d7ebe4}
+.auth .form{display:grid;place-items:center;padding:32px 16px;align-content:center}
+.auth .form .card{width:100%;max-width:400px}
+.auth .lang{text-align:right;margin-bottom:12px;width:100%;max-width:400px}
+@media (max-width:820px){
+  main.auth,.auth{grid-template-columns:1fr;min-height:0}
+  .auth .art{padding:18px 20px;min-height:0}
+  .auth .form{padding:24px 16px 40px}
+  .auth .art > :not(.logo){display:none}
+}
+
+/* Статистика */
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .v{font:700 2rem/1.1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .k{color:var(--muted);font-size:.875rem}
+.bar{height:10px;background:var(--todo);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--ok)}
+.bar.gold>i{background:var(--amber)}
+
+/* Тізімдер */
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list .grow{flex:1;min-width:0}
+.rank{width:28px;height:28px;border-radius:var(--radius-sm);display:grid;place-items:center;font:700 .85rem var(--mono);background:var(--todo);color:var(--todo-ink);flex:none}
+.rank.r1{background:#f6d572;color:#5a3b00}.rank.r2{background:#cfd8d4;color:#2c3a40}.rank.r3{background:#f0d2b8;color:#6a3510}
+.me{background:var(--accent-soft);border-radius:6px}
+
+/* Кестелер: жабысқақ тақырып пен бірінші баған */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:.82rem;font-weight:650;color:var(--muted)}
+.tablewrap{position:relative;overflow:auto;max-height:72vh;border:1px solid var(--line-strong);border-radius:var(--radius);background:#fff}
+.tablewrap table th{position:sticky;top:0;z-index:2;background:var(--shell);color:#fff;white-space:nowrap}
+.tablewrap table th:first-child,.tablewrap table td:first-child{position:sticky;left:0;background:#fff;z-index:1}
+.tablewrap table th:first-child{z-index:3;background:var(--shell)}
+.journal td.c{text-align:center;font-weight:700;font-family:var(--mono)}
+.m{display:inline-grid;place-items:center;min-width:32px;height:30px;border-radius:var(--radius-sm);font:700 .9rem var(--mono);padding:0 6px}
+.m.hi{background:var(--ok);color:#fff}
+.m.mid{background:var(--amber);color:#3a2a00}
+.m.lo{background:var(--bad);color:#fff}
+.m.none{background:transparent;color:var(--muted);font-weight:400}
+.m.prov{background:transparent;color:var(--ink);border:1px dashed var(--line-strong)}
+
+/* Сабақ */
+.lesson-head{margin-bottom:18px}
+.crumbs{font-size:.875rem;color:var(--muted);margin-bottom:8px}
+.theory{font-size:1.0625rem;line-height:1.72}
+.theory p,.theory li{max-width:72ch}
+.theory h2{margin-top:1.7em;font-size:1.4rem}
+.theory h3{margin-top:1.3em}
+.theory table{margin:14px 0;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden}
+.theory th{background:var(--shell);color:#fff;font-size:.9rem}
+.theory blockquote{margin:16px 0;padding:12px 16px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:6px;max-width:72ch}
+.theory blockquote p{margin:.3em 0}
+.theory img{max-width:100%;border-radius:6px}
+code{font:.9em var(--mono);background:#e4ece9;padding:1px 6px;border-radius:var(--radius-sm)}
+pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:.9rem;line-height:1.55}
+pre code{background:none;padding:0;color:inherit}
+
+.task{border:1px solid var(--line-strong);border-radius:var(--radius);background:#fff;padding:20px;margin-top:16px}
+.task .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.task .num{font:700 .8rem var(--mono);color:var(--muted)}
+.task .prompt{font-size:1.0625rem}
+.task .prompt p:first-child{margin-top:0}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-strong);border-radius:6px;margin:8px 0;cursor:pointer;font-weight:500;background:#fff;min-height:46px}
+.opt:hover{background:var(--surface-2)}
+.opt:focus-within{outline:3px solid var(--accent);outline-offset:1px}
+.opt input{margin-top:5px}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.result{margin-top:12px;padding:10px 12px;border-radius:6px;font-weight:550;border:1px solid transparent}
+.result.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok-line)}
+.result.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)}
+.result.wait{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+.explain{margin-top:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;font-size:.93rem}
+.task.done{border-color:var(--ok)}
+.task.done .hd .badge.state{background:var(--ok-soft)}
+
+.code-box{border-radius:6px;overflow:hidden;border:1px solid #1d3a41;margin-top:10px}
+.code-box .bar2{display:flex;justify-content:space-between;align-items:center;background:var(--code-bar);color:#a9c0b8;padding:7px 12px;font:.8rem var(--mono)}
+textarea.code{background:var(--code-bg);color:var(--code-ink);font:14px/1.6 var(--mono);border:0;border-radius:0;min-height:200px;padding:12px 14px;tab-size:4;white-space:pre;overflow:auto}
+textarea.code:focus-visible{outline:2px solid var(--shell-accent);outline-offset:-2px}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media (max-width:640px){.io{grid-template-columns:1fr}}
+.io textarea{font:13px/1.5 var(--mono);min-height:72px}
+.out{background:var(--code-bg);color:#d7ebe4;font:13px/1.5 var(--mono);border-radius:6px;padding:10px 12px;min-height:72px;white-space:pre-wrap;overflow:auto;max-height:260px;margin:0}
+.out .err{color:#ff9f9f}
+.tests{margin-top:10px;display:grid;gap:6px}
+.tests .t{font-size:.875rem;padding:8px 10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.tests .t.ok{background:var(--ok-soft);border-color:var(--ok-line)}.tests .t.bad{background:var(--bad-soft);border-color:var(--bad-line)}
+.tests pre{margin:6px 0 0;padding:8px 10px;font-size:.8rem}
+.examples{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px}
+.examples > div{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.85rem}
+.examples pre{margin:4px 0 0;padding:6px 8px;font-size:.82rem}
+
+.toast{position:fixed;right:18px;bottom:18px;background:var(--shell);color:#fff;padding:12px 16px;border-radius:6px;font-weight:600;box-shadow:var(--pop);transform:translateY(120%);transition:transform .2s cubic-bezier(.16,1,.3,1),visibility .2s;z-index:50;visibility:hidden}
+.toast.show{transform:none;visibility:visible}
+
+/* Сабақтар тізімі (мұғалім) */
+.qhead{display:flex;align-items:center;gap:12px;margin:26px 0 8px;font-weight:700;color:var(--ink);font-size:1rem}
+.qhead::after{content:"";flex:1;height:1px;background:var(--line-strong)}
+.lrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;margin-top:6px}
+.lrow .n{min-width:34px;color:var(--muted);font:700 .95rem var(--mono);text-align:right;flex:none}
+.lrow .t{flex:1;min-width:0}
+.lrow.open{border-color:var(--ok-line);background:#f6fbf8}
+.lrow .sec{font-size:.8rem;color:var(--muted)}
+
+/* Редактор */
+.tcard{border:1px solid var(--line-strong);border-radius:var(--radius);padding:14px;background:var(--surface-2);margin-top:12px}
+.tcard .opts .o{display:flex;gap:8px;align-items:center;margin-top:6px}
+.tcard .opts .o input[type=text]{flex:1}
+.tcard .tests-ed .trow{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;margin-top:6px;align-items:start}
+.tcard .tests-ed textarea{min-height:46px;font:13px var(--mono)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.preview{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:14px;background:#fff;max-height:640px;overflow:auto}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.kpi-ic{display:inline-flex;color:var(--accent)}
+
+/* Мерзім, пікірлер, рубрика */
+.dl{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;border-radius:6px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line);font-weight:550}
+.dl.late{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:3px 10px;background:var(--surface-2);font:inherit;font-size:.82rem;cursor:pointer;color:inherit}
+.chip:hover{border-color:var(--accent);background:var(--accent-soft)}
+.chip.save{border-style:dashed;color:var(--accent)}
+.crit-table{width:100%;border-collapse:collapse;margin-top:10px}
+.crit-table td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:middle}
+.crit-table input{width:84px}
+.theory > :first-child{margin-top:0}
+.grid > *{min-width:0}
+.theory table{display:block;overflow-x:auto;max-width:100%}
+.theory pre{max-width:100%}
+
+/* Мобильді түзетулер */
+@media (max-width:640px){
+  main{padding:16px 12px 48px}
+  .card{padding:16px}
+  .top .in{padding:0 12px;gap:0 12px;min-height:52px}
+  .who{order:2;gap:8px}
+  .who .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .nav{order:3;width:100%;flex:none;overflow-x:auto;margin:0 -12px;padding:0 8px;border-top:1px solid var(--shell-line)}
+  .nav a{padding:0 12px;min-height:46px;white-space:nowrap}
+  .strip .cell{width:calc((100% - 24px)/4)}
+  .task{padding:16px}
+  aside.card{position:static!important}
+}
+
+/* Оқушының басты беті: ойыншы жолағы, жалғастыру, сабақ жолдары */
+.player{display:grid;grid-template-columns:auto minmax(200px,360px) 1fr;gap:10px 20px;align-items:center;padding:16px 20px}
+.lvl{width:56px;height:56px;border-radius:var(--radius-cell);background:var(--shell);color:var(--shell-accent);display:grid;place-items:center;font-size:1.75rem;font-weight:700}
+.player .bar{margin-top:6px}
+.chipset{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.stat-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);font-weight:600;font-size:.9rem}
+.stat-chip b{font:700 1.05rem var(--mono)}
+.stat-chip .ic{color:var(--accent)}
+.resume{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--shell);color:var(--shell-ink);border:1px solid #081a1d;border-radius:var(--radius);padding:16px 20px;margin-top:16px}
+.resume h2{color:#fff;margin:2px 0 0;font-size:1.25rem}
+.resume .muted{color:var(--shell-muted)}
+.resume .btn{background:var(--shell-accent);border-color:var(--shell-accent);color:var(--shell)}
+.resume .btn:hover{background:#ffe08f;border-color:#ffe08f}
+.resume .prog{color:var(--shell-muted)}
+.resume .pip{background:var(--shell-line)}
+.resume .pip.done{background:#4fd69a}
+.resume .pip.wait{background:repeating-linear-gradient(135deg,#a98b3f 0 3px,#6d5a2b 3px 6px)}
+.pips{display:inline-flex;gap:3px}
+.pip{display:block;width:14px;height:14px;border-radius:3px;background:var(--todo)}
+.pip.done{background:var(--shell-2)}
+.pip.wait{background:repeating-linear-gradient(135deg,#f3e3b5 0 3px,var(--amber-soft) 3px 6px);outline:1px solid #d8bd74;outline-offset:-1px}
+.prog{display:inline-flex;align-items:center;gap:10px;font:600 .8rem var(--mono);color:var(--muted)}
+.lessons{list-style:none;margin:0;padding:0}
+.lessons li{display:grid;grid-template-columns:minmax(0,1fr) auto 64px;gap:6px 18px;align-items:center;padding:13px 0;border-top:1px solid var(--line)}
+.lessons li:first-child{border-top:0}
+.lessons .t > a{font-weight:700;font-size:1.02rem}
+.lessons .meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:3px}
+.lessons .act{text-align:right}
+@media (max-width:900px){.player{grid-template-columns:auto 1fr}.chipset{grid-column:1/-1;justify-content:flex-start}}
+@media (max-width:640px){
+  .player{padding:14px;gap:10px 14px}
+  .chipset{gap:6px}
+  .stat-chip{padding:5px 9px;font-size:.82rem;gap:6px}
+  .stat-chip b{font-size:.95rem}
+  .lessons li{grid-template-columns:minmax(0,1fr) auto}
+  .lessons .t{grid-column:1/-1}
+  .lessons .act{text-align:right}
+  .resume{padding:14px}
+  .resume .btn{width:100%}
+}
+
+/* Сабақ беті: жолақ, нәтиже тізімі, тапсырма күйлері */
+.lesson-head #lessonScore{font-size:1rem;padding:4px 10px}
+.lstrip{margin:0 0 20px}
+a.cell{text-decoration:none}
+a.cell:hover{text-decoration:none;filter:brightness(1.07)}
+.cell b .ic{width:15px;height:15px;vertical-align:-2px}
+.cell.mini{flex-direction:row;align-items:center;justify-content:center;width:34px;height:28px;padding:0;font-size:12px}
+.side-sticky{position:sticky;top:72px}
+#toc{list-style:none;margin:0;padding:0}
+#toc li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.875rem}
+#toc li:first-child{border-top:0}
+#toc .grow{flex:1;min-width:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#toc .grow:hover{color:var(--accent)}
+#toc .num{font:600 .8rem var(--mono);color:var(--muted);flex:none}
+.task{scroll-margin-top:84px}
+.task.is-part{border-color:var(--amber)}
+.task.is-bad{border-color:var(--bad)}
+.task.is-wait{border-style:dashed;border-color:#c9a64a}
+.opt > span{display:flex;gap:10px;align-items:flex-start}
+.opt > span > b{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:var(--radius-sm);background:var(--todo);color:var(--todo-ink);font:700 .85rem var(--mono);flex:none}
+.opt.right > span > b{background:var(--ok);color:#fff}
+.opt.wrong > span > b{background:var(--bad);color:#fff}
+.result .ic,.explain .ic{margin-right:8px}
+.tests .t .ic{margin-right:6px}
+.tests .t.ok > .ic{color:var(--ok)}
+.tests .t.bad > .ic{color:var(--bad)}
+.btn .ic{width:1.05em;height:1.05em}
+.dl .ic{flex:none}
+.explain.with-ic{display:flex;gap:10px;align-items:flex-start}
+.explain.with-ic .ic{margin:3px 0 0;color:var(--accent)}
+.explain p:first-child{margin-top:0}.explain p:last-child{margin-bottom:0}
+input[type=file]::file-selector-button{font:inherit;font-weight:650;font-size:.9rem;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);padding:7px 14px;margin-right:10px;cursor:pointer}
+input[type=file]::file-selector-button:hover{background:var(--surface-2);border-color:#97a9a1}
+
+/* Мұғалім беттері: сыныптар кестесі, сабақ жолдары, мәзірлер */
+.code-chip{font:700 .95rem var(--mono);letter-spacing:.08em;background:var(--surface-2);border:1px solid var(--line-strong);padding:2px 8px;border-radius:var(--radius-sm)}
+.cell.wide{width:124px;height:62px}
+.lrow .meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:3px}
+.lrow .tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lrow .tools details{display:inline-block}
+.lrow .tools details[open]{flex-basis:100%}
+.lrow.blk{margin-left:28px}
+.lrow .acts{display:flex;align-items:center;gap:8px;flex:none}
+.chipbtn{cursor:pointer;list-style:none;color:var(--muted);background:var(--surface-2)}
+.chipbtn::-webkit-details-marker{display:none}
+.chipbtn:hover{border-color:var(--accent);color:var(--accent)}
+.chipbtn.warn{color:var(--warn);background:var(--warn-soft)}
+.chipbtn.bad{color:var(--bad);background:var(--bad-soft)}
+.formrow{gap:8px;margin-top:8px;flex-wrap:wrap}
+.formrow input[type=date]{width:auto;min-height:32px;padding:3px 8px}
+.formrow select{width:auto;min-height:32px;padding:3px 8px}
+details > summary{list-style:none}
+details > summary::-webkit-details-marker{display:none}
+.menu{position:relative}
+.menu > summary{cursor:pointer}
+.menu .pop{position:absolute;right:0;top:calc(100% + 4px);z-index:6;width:210px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);padding:8px;box-shadow:var(--pop)}
+@media (max-width:640px){
+  .lrow{flex-wrap:wrap}
+  .lrow .t{flex:1 1 calc(100% - 50px)}
+  .lrow .acts{margin-left:44px}
+  .lrow.blk{margin-left:14px}
+  .cell.wide{width:calc((100% - 8px)/2)}
+}
+.lrow .tools details.blk:not([open]) > summary{background:transparent;border-color:transparent;padding-left:0}
+.lrow .tools details.blk:not([open]) > summary:hover{border-color:var(--accent)}
+
+/* Журнал */
+.legend-line{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 12px}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 24px}
+.journal .tot{position:sticky;background:#fff;z-index:1;min-width:66px;font-family:var(--mono)}
+.journal th.tot{background:var(--shell);z-index:3}
+.journal .t1{right:0}
+.journal .t2{right:66px;box-shadow:-1px 0 0 var(--line-strong)}
+.journal tr:hover td{background:var(--surface-2)}
+.journal .mk{display:inline-flex;align-items:center;gap:3px;text-decoration:none}
+.journal .mk:hover{text-decoration:none}
+.pend{width:13px;height:13px;color:var(--warn);vertical-align:-2px}
+.journal .away{color:var(--warn);font-size:.8em;cursor:help}
+.journal td.c{padding:6px 4px}
+
+/* Тексеру */
+.bank > summary{cursor:pointer;font-weight:700;display:flex;align-items:center;gap:8px}
+.bankchip{display:inline-flex;align-items:center;gap:6px;cursor:default}
+.bankchip .delc{display:inline-flex;color:var(--bad)}
+.bankchip .delc:hover{text-decoration:none;background:var(--bad-soft)}
+.review .answer{margin-top:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;white-space:pre-wrap}
+.review .answer.file{white-space:normal}
+.review .answer .ic{margin-right:6px}
+.review .prompt{padding:0}
+.crit-table .qset{width:1%;white-space:nowrap}
+.crit-table .seg{padding:2px}
+.crit-table .seg button{margin:0;padding:3px 10px;border:0;border-radius:4px;background:transparent;color:var(--ink);font:700 .85rem var(--mono);cursor:pointer;min-width:34px}
+.crit-table .seg button:hover{background:#fff}
+.totline{margin:10px 0 0;font-size:1.05rem}
+.totline .rtot,.totline .rfinal{font-size:1.25rem}
+@media (max-width:640px){
+  .crit-table,.crit-table tbody,.crit-table tr{display:block}
+  .crit-table tr{padding:8px 0;border-top:1px solid var(--line)}
+  .crit-table td{display:inline-block;border:0;padding:4px 6px 4px 0}
+  .crit-table td:first-child{display:block}
+  .crit-table .qset{width:auto}
+}
+.seg a{white-space:nowrap}
+@media (max-width:640px){
+  .seg a{padding:6px 9px;font-size:.8rem}
+  .journal .tot{position:static;min-width:54px}
+  .journal .t2{box-shadow:none}
+  .journal th:first-child,.journal td:first-child{min-width:128px!important;max-width:150px}
+}
+.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+
+/* Жауаптар тарихы (мұғалімге) */
+.hist{margin-top:10px;font-size:.92rem}
+.hist summary{cursor:pointer;color:var(--muted);width:max-content}
+.hist ol{margin:8px 0 0;padding-left:22px;display:grid;gap:10px}
+.hist-ans{white-space:pre-wrap;margin:4px 0 0;max-height:220px;overflow:auto}

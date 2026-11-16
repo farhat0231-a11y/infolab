@@ -1,0 +1,27 @@
+/* Көрсету режимі: проектор (толық экран) және мұғалім терезесі */
+body.pres{margin:0;background:#0a1a1d;color:var(--shell-ink)}
+.pres.screen{overflow:hidden;height:100vh}
+#full{position:fixed;inset:0;background:#0a1a1d;overflow:hidden}
+#full .slide{position:absolute;left:0;top:0;transform-origin:0 0}
+#black{position:fixed;inset:0;background:#000;z-index:5}
+.hint{position:fixed;right:14px;bottom:14px;z-index:6;background:rgba(14,42,47,.85);color:#fff;border:1px solid var(--shell-line);border-radius:6px;padding:6px 12px;font:600 13px var(--font);cursor:pointer;opacity:.0;transition:opacity .3s}
+.hint:hover,.hint:focus-visible{opacity:1}
+.tbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--shell);border-bottom:1px solid #081a1d;flex-wrap:wrap}
+.tbar .ttl{font-size:1rem}.tbar .grow{flex:1}
+.tbar .btn{background:transparent;color:var(--shell-ink);border-color:var(--shell-line)}
+.tbar .btn:hover{background:var(--shell-2)}
+.tgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;padding:14px;max-width:1500px;margin:0 auto}
+.tgrid .tnotes{grid-column:1/-1}
+.pres .card{background:var(--shell);border-color:var(--shell-line);color:var(--shell-ink)}
+.pres .lbl{display:block;font-size:.8rem;font-weight:650;color:var(--shell-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.pres .ctl{margin-top:12px}
+.pres .btn{background:var(--shell-2);color:#fff;border-color:var(--shell-line)}
+.pres .btn.primary{background:var(--shell-accent);color:#16242a;border-color:var(--shell-accent)}
+.pres .btn.on{background:#fff;color:#16242a}
+.pres .fit{border-color:var(--shell-line)}
+.timers .tm{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.timers .tm b{font-size:2.1rem;line-height:1}
+.timers .tm b.late{color:#ff8a8a}
+#notes{font-size:1.6rem;line-height:1.5;white-space:pre-wrap;min-height:5em}
+#counter{min-width:5ch;text-align:center}
+@media (max-width:900px){.tgrid{grid-template-columns:1fr}.tside{order:3}#notes{font-size:1.3rem}}

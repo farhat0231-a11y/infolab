@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% from '_mark.html' import m10, m5 %}{% block title %}Журнал {{ cls.name }}{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:12px">
+  <div><a class="small" href="{{ url_for('class_page', cid=cls.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ cls.name }}</a><h1 style="margin:6px 0 0">Журнал · {{ cls.name }}</h1></div>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Тоқсан">{% for qn in range(1,5) %}<a class="{{ 'on' if quarter==qn }}" href="?q={{ qn }}"{% if quarter==qn %} aria-current="true"{% endif %}>{{ qn }}-тоқсан</a>{% endfor %}</div>
+    <a class="btn" href="{{ url_for('journal_csv', cid=cls.id, q=quarter) }}"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Excel (CSV)</a>
+  </div>
+</div>
+<p class="muted small" style="margin:0 0 8px">Ұяшықтағы сан — сабақ бойынша 10 балдық баға. Оң жақтағы бағандар — тоқсан бойынша пайыз және 5 балдық баға. Ұяшықты басып, оқушының жауаптарын көріңіз.</p>
+<div class="legend-line small" aria-label="Түс белгілері">
+  <span class="m hi">8–10</span><span class="m mid">5–7</span><span class="m lo">1–4</span><span class="m none">·</span><span class="muted">әлі бағасы жоқ</span>
+  <span class="muted" style="margin-left:10px"><svg class="ic pend" aria-hidden="true"><use href="#i-clock"/></svg> тексерілмеген жауап бар</span>
+</div>
+{% if not lessons %}<div class="card empty">Бұл тоқсанда ашылған, тапсырмасы бар сабақ жоқ.</div>{% else %}
+<div class="tablewrap">
+<table class="journal">
+  <caption class="sr-only">Журнал {{ cls.name }}, {{ quarter }}-тоқсан</caption>
+  <tr><th scope="col" style="min-width:200px">Оқушы</th>
+    {% for L in lessons %}<th scope="col" class="c" title="{{ L.title }}" style="text-align:center;min-width:56px">{{ lnum(L) }}{% if L.bjb %}<br><span class="badge warn" style="font-size:.75rem">БЖБ</span>{% endif %}</th>{% endfor %}
+    <th scope="col" class="c tot t2">%</th><th scope="col" class="c tot t1">Тоқсан</th></tr>
+  {% for r in rows %}
+  <tr><td><a href="{{ url_for('student_detail', uid=r.s.id) }}">{{ r.s.name }}</a></td>
+    {% for c in r.cells %}<td class="c"><a class="mk" href="{{ url_for('student_detail', uid=r.s.id, lesson=lessons[loop.index0].id) }}">{{ m10(c.percent) }}{% if c.pending %}<svg class="ic pend" aria-hidden="true"><use href="#i-clock"/></svg><span class="sr-only">тексерілмеген жауап бар</span>{% endif %}{% if c.away %}<span class="away" title="Сабақ бетінен {{ c.away.n }} рет шықты, барлығы {{ (c.away.secs / 60)|round(1) }} мин">⚠<span class="sr-only">сабақ бетінен шыққан</span></span>{% endif %}</a></td>{% endfor %}
+    <td class="c tot t2">{{ r.percent|fmt }}</td><td class="c tot t1">{{ m5(r.mark5) }}</td></tr>
+  {% else %}<tr><td colspan="99" class="empty">Оқушылар жоқ</td></tr>{% endfor %}
+</table></div>
+<div class="card small" style="margin-top:14px">
+  <h3 style="margin-bottom:10px">Сабақтар</h3>
+  <div class="legend-grid">{% for L in lessons %}<div><b class="num">{{ lnum(L) }}</b> · {{ L.title }}</div>{% endfor %}</div>
+</div>
+{% endif %}
+{% endblock %}

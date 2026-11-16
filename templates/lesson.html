@@ -1,0 +1,55 @@
+{% extends 'base.html' %}{% block title %}{{ L.title }}{% endblock %}
+{% block body %}
+<div class="lesson-head">
+  <div class="crumbs">{{ tr('{n}-сынып').format(n=L.grade) }} · {{ tr('{n}-тоқсан').format(n=L.quarter) }} · {{ tr(L.section) }}</div>
+  <div class="spread">
+    <h1 style="margin:0">{{ L.title }}</h1>
+    <div class="row">
+      {% if L.bjb %}<span class="badge warn">{{ tr('БЖБ бар сабақ') }}</span>{% endif %}
+      {% if res %}<span class="badge blue num" id="lessonScore">{{ res.score|fmt }} / {{ res.max|fmt }} {{ tr('балл') }}</span>
+        <span class="badge num" id="lessonMark">{{ tr('Баға') }}: {{ mark10(res.percent) or '—' }}</span>{% endif %}
+      {% if g.user.role == 'teacher' %}<a class="btn sm" href="{{ url_for('lesson_edit', lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Өңдеу</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% if g.user.role == 'teacher' and (L.kind or 'lesson') != 'block' %}{% for pc in planner_links(L) %}
+<div class="row small" style="margin-bottom:8px;gap:8px"><b>{{ pc.name }}</b>
+  <a class="btn sm" href="{{ url_for('planner.edit', cid=pc.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>{{ tr('Жоспар') }}{% if pc.has_plan %} <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>{% endif %}</a>
+  <a class="btn sm" href="{{ url_for('planner.slides_edit', cid=pc.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>{{ tr('Слайд') }}</a>
+  <a class="btn sm" href="{{ url_for('planner.present_teacher', cid=pc.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>{{ tr('Көрсету') }}</a></div>{% endfor %}{% endif %}
+{% if is_block %}<div class="row small" style="margin-bottom:12px;gap:10px"><span class="badge blue"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>{{ tr('Тапсырмалар блогы') }}</span>
+  {% if parent %}<a href="{{ url_for('lesson', lid=parent.id) }}">{{ tr('Сабақтың теориясы') }}: {{ parent.title }}<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></a>{% endif %}</div>{% endif %}
+{% if dl %}<div class="dl {{ 'late' if dl.late }}"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span>
+  {% if not dl.late %}{{ tr('Мерзімі:') }} <b class="num">{{ dl.due|dmy }}</b>
+  {% elif dl.pct == 0 %}{{ tr('Мерзімі өтті ({d}). Тапсыру жабық.').format(d=dl.due|dmy) }}
+  {% elif dl.pct < 100 %}{{ tr('Мерзімі өтті ({d}). Ұпайдың {n}%-ы есептеледі.').format(d=dl.due|dmy, n=dl.pct) }}
+  {% else %}{{ tr('Мерзімі өтті ({d}).').format(d=dl.due|dmy) }}{% endif %}</span></div>{% endif %}
+{% if tasks %}<nav class="strip lstrip" id="strip" aria-label="{{ tr('Тапсырмалар') }}"></nav>{% endif %}
+<div class="grid side">
+  <div>
+    {% if not is_block %}<div class="card theory">
+      {% if L.theory %}{{ L.theory|md }}{% else %}<div class="empty">{{ tr('Бұл сабаққа теория әлі қосылмаған.') }}</div>{% endif %}
+    </div>{% endif %}
+    <div id="tasks">
+      <h2 style="margin-top:{{ 0 if is_block else 28 }}px">{{ tr('Практикалық тапсырмалар') }}</h2>
+      {% if not tasks %}<div class="card empty">{{ tr('Тапсырмалар әлі жоқ.') }}</div>{% endif %}
+    </div>
+  </div>
+  <aside class="card side-sticky">
+    <h3>{{ tr('Оқу мақсаттары') }}</h3>
+    <p class="small muted" style="white-space:pre-line">{{ L.objectives }}</p>
+    {% if tasks %}
+    <h3 style="margin-top:16px">{{ tr('Тапсырмалар') }}</h3>
+    <ul id="toc"></ul>
+    <p class="small muted" style="margin-top:12px">{{ tr('Тест пен қысқа жауапқа {n} әрекет беріледі. Код тапсырмаларын қанша рет болса да жіберуге болады — ең жақсы нәтиже сақталады.').format(n=attempts) }}</p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.TASKS = {{ tasks|tojson }}; window.ROLE = {{ g.user.role|tojson }}; window.ATTEMPTS = {{ attempts }}; window.DL = {{ dl|tojson }};</script>
+<script src="{{ url_for('static', filename='codearea.js') }}"></script>
+<script src="{{ url_for('static', filename='lesson.js') }}"></script>
+{% if g.user.role == 'student' %}<script>window.GUARD_NAME = {{ g.user.name|tojson }}; window.GUARD_LESSON = {{ L.id }};</script>
+<script src="{{ url_for('static', filename='guard.js') }}"></script>{% endif %}
+{% endblock %}

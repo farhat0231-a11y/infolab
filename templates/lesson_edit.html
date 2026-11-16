@@ -1,0 +1,62 @@
+{% extends 'base.html' %}{% block title %}Өңдеу: {{ L.title }}{% endblock %}
+{% block body %}
+<a class="small" href="{{ url_for('lessons_admin', grade=L.grade) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ L.grade }}-сынып сабақтары</a>
+<form method="post" id="form">
+<div class="spread" style="margin:6px 0 14px">
+  <h1 style="margin:0">{{ 'Тапсырмалар блогын өңдеу' if L.kind == 'block' else 'Сабақты өңдеу' }}</h1>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Тіл"><a class="{{ 'on' if lang != 'ru' }}" href="{{ url_for('lesson_edit', lid=L.id) }}">Қазақша</a><a class="{{ 'on' if lang == 'ru' }}" href="{{ url_for('lesson_edit', lid=L.id, lang='ru') }}">Орысша</a></div>
+    <a class="btn" href="{{ url_for('lesson', lid=L.id, lang=lang) if lang == 'ru' else url_for('lesson', lid=L.id) }}" target="_blank"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>Оқушы көзімен</a><button class="btn primary"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Сақтау</button></div>
+</div>
+{% if lang == 'ru' %}<div class="explain with-ic" style="margin:0 0 16px"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><div><b>Орыс топтарына арналған нұсқа.</b>
+  <span class="muted small">Мәтіндерді аударыңыз. Тапсырмалардың саны мен түрі қазақша нұсқамен бірдей болуы керек — оларды «Қазақша» бетінде өзгертіңіз. Теория бос болса, орыс тобы қазақша теорияны көреді.</span></div></div>{% endif %}
+<div class="card">
+  <div class="muted small">{{ L.grade }}-сынып · {{ L.quarter }}-тоқсан · {{ L.section }}{% if L.kind == 'block' %} · <span class="badge blue"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>теориясыз, тек тапсырмалар</span>{% endif %}</div>
+  <label for="le-title">Тақырып</label><input type="text" id="le-title" name="title" value="{{ L.title }}">
+  <div class="small muted" style="margin-top:8px"><b>Оқу мақсаттары:</b> {{ L.objectives }}</div>
+</div>
+
+{% if ai_on %}
+<div class="card">
+  <h2><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg> AI арқылы жасау (Gemini)</h2>
+  <p class="muted small">Оқулықтың осы тақырыпқа қатысты мәтінін қойыңыз (міндетті емес). AI теория мен тапсырмаларды жасайды — сіз тексеріп, түзетіп, сақтайсыз.</p>
+  <label class="sr-only" for="aiSource">Оқулық мәтіні</label><textarea id="aiSource" placeholder="Оқулық мәтіні..." style="min-height:120px"></textarea>
+  <div class="row" style="margin-top:10px">
+    {% if L.kind == 'block' %}<button type="button" class="btn primary" onclick="aiGen('tasks')">Тапсырмалар жасау (сабақтың теориясына сүйеніп)</button>
+    {% else %}<button type="button" class="btn primary" onclick="aiGen('all')">Теория + тапсырмалар</button>
+    <button type="button" class="btn" onclick="aiGen('theory')">Тек теория</button>
+    <button type="button" class="btn" onclick="aiGen('tasks')">Тек тапсырмалар</button>{% endif %}
+    <span id="aiStatus" class="muted small"></span>
+  </div>
+</div>
+{% endif %}
+
+<details class="card bank">
+  <summary><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Дайын JSON қою (Claude, ChatGPT немесе басқа AI жасаған мазмұн)</summary>
+  <p class="muted small">PROMPT.md файлындағы «Сабақ мазмұнын жасау» промтын AI-ға беріңіз, ол қайтарған JSON-ды осында қойып, «Қолдану» басыңыз. Содан кейін тексеріп, «Сақтау» басыңыз.</p>
+  <label class="sr-only" for="jsonImport">JSON</label><textarea id="jsonImport" style="min-height:120px;font:13px var(--mono)" placeholder='{"theory": "...", "tasks": [...]}'></textarea>
+  <button type="button" class="btn" style="margin-top:8px" onclick="importJson()">Қолдану</button> <span id="impStatus" class="small"></span>
+</details>
+
+{% if L.kind != 'block' %}<div class="card">
+  <div class="spread"><h2 style="margin:0">Теория</h2><span class="muted small">Markdown: ## тақырыпша, **қалың**, - тізім, ```python код```, | кесте |</span></div>
+  <div class="split" style="margin-top:10px">
+    <label class="sr-only" for="theory">Теория (Markdown)</label><textarea name="theory" id="theory" style="min-height:520px;font:13.5px/1.55 var(--mono)">{{ L.theory }}</textarea>
+    <div class="preview theory" id="preview"></div>
+  </div>
+</div>{% endif %}
+
+<div class="card">
+  <div class="spread"><h2 style="margin:0">Тапсырмалар</h2>
+    <div class="row" id="addBtns"></div></div>
+  <div id="tasksEd"></div>
+  <input type="hidden" name="tasks_json" id="tasks_json">
+</div>
+<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Сақтау</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>window.EDIT_LANG = {{ (lang or 'kk')|tojson }}; window.TASKS_INIT = {{ tasks|tojson }}; window.LID = {{ L.id }}; window.TYPES = Object.fromEntries({{ TASK_TYPES.items()|list|tojson }});</script>
+<script src="{{ url_for('static', filename='codearea.js') }}"></script>
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+{% endblock %}

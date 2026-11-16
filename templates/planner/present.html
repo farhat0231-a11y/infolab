@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{ view_lang() }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ L.title }} · {{ tr('Көрсету') }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='slides.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='present.css') }}">
+</head>
+<body class="pres {{ mode }}" data-mode="{{ mode }}">
+{% include '_icons.html' %}
+{% if mode == 'screen' %}
+<div id="full"><div class="slide" id="slideMain"></div></div>
+<div id="black" hidden></div>
+<button type="button" class="hint" id="fsBtn" aria-label="{{ tr('Толық экран') }} (F)">{{ tr('Толық экран') }} · F</button>
+{% else %}
+<header class="tbar">
+  <a class="btn sm" href="{{ data.urls.back }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ tr('Слайдтар') }}</a>
+  <b class="ttl">{{ L.title }}</b>
+  <span class="grow"></span>
+  <button type="button" class="btn sm" id="openScreen"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>{{ tr('Проекторға терезе ашу') }}</button>
+  <button type="button" class="btn sm" id="fsBtn">{{ tr('Толық экран') }} (F)</button>
+</header>
+<main class="tgrid">
+  <section class="tcur" aria-label="{{ tr('Ағымдағы слайд') }}"><div class="fit" id="curBox"><div class="slide" id="slideMain"></div></div>
+    <div class="ctl row">
+      <button type="button" class="btn" id="prev" aria-label="{{ tr('Алдыңғы') }} (←)"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+      <b class="num" id="counter"></b>
+      <button type="button" class="btn primary" id="next" aria-label="{{ tr('Келесі') }} (→)"><svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="btn" id="blackBtn">{{ tr('Қара экран') }} (B)</button>
+      <button type="button" class="btn" id="openTasks"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span id="openLbl">{{ tr('Тапсырмаларды сыныпқа ашу') }}</span></button>
+    </div></section>
+  <aside class="tside">
+    <div class="card timers"><div class="tm"><span class="lbl">{{ tr('Сабақ') }}</span><b class="num" id="tLesson">--:--</b></div>
+      <div class="tm"><span class="lbl" id="phaseLbl">{{ tr('Кезең') }}</span><b class="num" id="tPhase">--:--</b></div>
+      <div class="row"><button type="button" class="btn sm" id="tStart">{{ tr('Таймерді бастау') }}</button><button type="button" class="btn sm" id="tReset">{{ tr('Тазарту') }}</button></div></div>
+    <div class="card"><span class="lbl">{{ tr('Келесі слайд') }}</span><div class="fit" id="nextBox"><div class="slide" id="slideNext"></div></div></div>
+  </aside>
+  <section class="card tnotes"><span class="lbl">{{ tr('Мұғалімнің сөзі') }}</span><div id="notes"></div></section>
+</main>
+{% endif %}
+<script>
+window.PRES = {{ data|tojson }};
+window.PRES_T = {{ {'noNotes': tr('(сөз жазылмаған)'), 'end': tr('Соңы'), 'opened': tr('Тапсырмалар ашық'), 'fs': tr('Толық экран'),
+  'over': tr('асып кетті')}|tojson }};
+</script>
+<script src="{{ url_for('static', filename='slides.js') }}"></script>
+<script src="{{ url_for('static', filename='present.js') }}"></script>
+</body></html>

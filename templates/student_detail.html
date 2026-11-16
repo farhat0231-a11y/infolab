@@ -1,0 +1,52 @@
+{% extends 'base.html' %}{% from '_mark.html' import m10, m5 %}{% from '_history.html' import history %}{% block title %}{{ s.name }}{% endblock %}
+{% block body %}
+<a class="small" href="{{ url_for('class_page', cid=s.class_id) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>Сыныпқа оралу</a>
+<h1 style="margin:6px 0 16px">{{ s.name }}</h1>
+<section class="card player">
+  <div class="lvl num">{{ level.num }}</div>
+  <div><b>{{ level.num }}-деңгей</b> <span class="muted">· {{ level.name }}</span></div>
+  <div class="chipset">
+    <span class="stat-chip"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><b>{{ xp }}</b> XP</span>
+    <span class="stat-chip"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg><b>{{ streak }}</b> күн қатарынан</span>
+    {% for qn, qs in quarters.items() %}{% if qs.lessons %}<span class="stat-chip">{{ qn }}-тоқсан {{ m5(qs.mark5) }} <b>{{ qs.percent|fmt }}%</b></span>{% endif %}{% endfor %}
+  </div>
+</section>
+{% if penalties %}<section class="card" style="margin-top:16px">
+  <h2 style="margin:0 0 8px">Айыппұлдар</h2>
+  <ul class="list">{% for p in penalties %}<li><span class="grow">{{ p.reason }}{% if p.lesson_id %} · <span class="muted">{{ p.title }}</span>{% endif %}</span>
+    {% if p.xp %}<span class="badge bad num">−{{ p.xp }} XP</span>{% endif %}{% if p.pts %}<span class="badge bad num">−{{ p.pts|fmt }} балл</span>{% endif %}
+    <span class="muted small num">{{ p.created[:16] }}</span>
+    <form method="post" action="{{ url_for('cancel_penalty', pid=p.id) }}" onsubmit="return confirm('Айыппұлды алып тастау керек пе? XP мен балл қайтарылады.')"><button class="btn sm">Қайтару</button></form></li>{% endfor %}</ul>
+</section>{% endif %}
+{% if L %}
+<div class="card" style="margin-top:16px">
+  <div class="spread" style="align-items:flex-start;gap:12px"><h2 style="margin:0">{{ L.title }}: жауаптары</h2>
+  {% if subs|selectattr('attempts')|list %}<form method="post" action="{{ url_for('student_retake', uid=s.id, lid=L.id) }}"
+    onsubmit="return confirm('{{ s.name }} оқушысының «{{ L.title }}» сабағындағы барлық жауабы өшіріледі, ол тапсырмаларды басынан қайта орындайды. Бұрынғы жауаптар тарихта сақталады, бұл сабақтан алған XP шегеріледі. Жалғастыру керек пе?')">
+    <button class="btn sm"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Қайта тапсыруға рұқсат беру</button></form>{% endif %}</div>
+  <p class="muted small" style="margin:6px 0 12px">Төмен балл алған оқушыға екінші мүмкіндік: жауаптары өшеді де, сабақты басынан орындайды. Мерзімі өтіп, кеш тапсыру жабық болса, сабақтың мерзімін ұзартыңыз.</p>
+  {% if away %}<p class="badge warn" style="margin-bottom:12px">⚠ Сабақ кезінде беттен {{ away.n }} рет шықты (басқа терезе, ЖИ панелі), барлығы {{ (away.secs / 60)|round(1) }} мин{% if away.pastes %} · жауапқа мәтін қоюға {{ away.pastes }} рет тырысты{% endif %}</p>{% endif %}
+  {% for t in subs %}
+  <div class="task">
+    <div class="hd"><span class="num">{{ loop.index }}. {{ TASK_TYPES[t.type] }}</span>
+      {% if t.status == 'pending' %}<span class="badge warn"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Тексерілмеген</span>{% elif t.score is not none %}<span class="badge {{ 'ok' if t.score>=t.points else 'warn' }} num">{{ t.score|fmt }}/{{ t.points }}</span>{% else %}<span class="badge">Орындалмаған</span>{% endif %}</div>
+    <div class="prompt">{{ t.prompt|md }}</div>
+    {% if t.answer is not none %}
+      {% if t.type in ('quiz','multi') %}<div class="explain">Таңдады: {% for a in ([t.answer] if t.type=='quiz' else t.answer) %}<b>{{ t.data.options[a|int] }}</b>{{ '; ' if not loop.last }}{% endfor %}</div>
+      {% elif t.type == 'code' %}<pre>{{ t.answer }}</pre>
+      {% elif t.type == 'file' and t.answer is mapping %}<div class="explain"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg> <a href="{{ url_for('upload_file', fn=t.answer.file) }}" target="_blank"><b>{{ t.answer.name }}</b></a></div>
+      {% else %}<div class="explain" style="white-space:pre-wrap">{{ t.answer }}</div>{% endif %}
+      <div class="muted small num" style="margin-top:6px">Әрекет: {{ t.attempts }} · {{ t.updated }}</div>
+      {{ history(t.hist, t.data) }}
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% for qn, qs in quarters.items() %}{% if qs.lessons %}
+<section style="margin-top:20px"><h2>{{ qn }}-тоқсан</h2>
+<div class="tablewrap" style="max-height:none"><table><tr><th>Сабақ</th><th>Балл</th><th>Баға</th><th><span class="sr-only">Жауаптары</span></th></tr>
+{% for Lx, r in qs.lessons %}<tr><td>{{ Lx.title }}</td><td class="num">{{ r.score|fmt }}/{{ r.max|fmt }}</td><td>{{ m10(r.percent) }}</td>
+<td style="text-align:right"><a class="btn sm" href="?lesson={{ Lx.id }}">Жауаптары<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></a></td></tr>{% endfor %}</table></div></section>
+{% endif %}{% endfor %}
+{% endblock %}

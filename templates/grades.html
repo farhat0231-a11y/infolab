@@ -1,0 +1,22 @@
+{% extends 'base.html' %}{% from '_mark.html' import m10, m5 %}{% block title %}{{ tr('Бағаларым') }}{% endblock %}
+{% block body %}
+<h1>{{ tr('Бағаларым') }}</h1>
+<p class="muted" style="max-width:72ch">{{ tr('Әр сабақтың бағасы (10 балдық) тапсырмалардан жинаған пайызыңызбен есептеледі. Тоқсандық баға: 85%+ → 5, 65%+ → 4, 40%+ → 3.') }}</p>
+<div class="strip" style="margin:0 0 8px">
+{% for qn, qs in quarters.items() %}{% set mk = qs.mark5 %}
+  <span class="cell wide {{ 'ok' if mk == 5 else 'part' if mk in (3, 4) else 'bad' if mk else 'todo' }}"{% if mk in (3, 4) and qs.percent is not none %} style="--fill:{{ qs.percent|int }}%"{% endif %}>{{ tr('{n}-тоқсан').format(n=qn) }}<b>{{ mk or '—' }}{% if qs.percent is not none %} · {{ qs.percent|fmt }}%{% endif %}</b></span>
+{% endfor %}
+</div>
+{% for qn, qs in quarters.items() %}{% if qs.lessons %}
+<section style="margin-top:24px">
+  <h2>{{ tr('{n}-тоқсан').format(n=qn) }} <span class="muted num" style="font-size:1rem;font-weight:600">· {{ qs.score|fmt }}/{{ qs.max|fmt }} {{ tr('балл') }}</span></h2>
+  <div class="tablewrap" style="max-height:none"><table>
+    <tr><th>{{ tr('Сабақ') }}</th><th style="width:120px">{{ tr('Балл') }}</th><th style="width:70px">{{ tr('Баға') }}</th></tr>
+    {% for L, r in qs.lessons %}
+    <tr><td><a href="{{ url_for('lesson', lid=L.id) }}">{{ L.title }}</a>{% if r.pending %} <span class="badge warn"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>{{ tr('тексерілуде') }}</span>{% endif %}</td>
+        <td class="num">{{ r.score|fmt }} / {{ r.max|fmt }}</td><td>{{ m10(r.percent) }}</td></tr>
+    {% endfor %}
+  </table></div>
+</section>
+{% endif %}{% endfor %}
+{% endblock %}

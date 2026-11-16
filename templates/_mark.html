@@ -1,0 +1,2 @@
+{% macro m10(p) %}{% set m = mark10(p) %}{% if m %}<span class="m {{ 'hi' if m>=8 else 'mid' if m>=5 else 'lo' }}">{{ m }}</span>{% else %}<span class="m none">·</span>{% endif %}{% endmacro %}
+{% macro m5(m) %}{% if m %}<span class="m {{ 'hi' if m==5 else 'mid' if m>=4 else 'mid' if m==3 else 'lo' }}">{{ m }}</span>{% else %}<span class="m none">—</span>{% endif %}{% endmacro %}

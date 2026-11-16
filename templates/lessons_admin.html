@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% block title %}Сабақтар{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:8px"><h1 style="margin:0">Сабақтар (КТЖ бойынша)</h1>
+<div class="seg" role="group" aria-label="Сынып">{% for gr in range(7,12) %}<a class="{{ 'on' if grade==gr }}" href="?grade={{ gr }}"{% if grade==gr %} aria-current="true"{% endif %}>{{ gr }}-сынып</a>{% endfor %}</div></div>
+<p class="muted small">Тақырыптар күнтізбелік-тақырыптық жоспардан алынды. Әр сабаққа теория мен тапсырма қосу үшін «Өңдеу» басыңыз.</p>
+{% set ns = namespace(q=0) %}
+{% for L in rows %}
+  {% if L.quarter != ns.q %}{% set ns.q = L.quarter %}<div class="qhead">{{ L.quarter }}-тоқсан</div>{% endif %}
+  <div class="lrow {{ 'open' if L.nt }} {{ 'blk' if L.kind == 'block' }}">
+    <span class="n">{{ lnum(L) }}</span>
+    <div class="t"><b>{{ L.title }}</b>
+      <div class="sec meta">{% if L.kind == 'block' %}<span class="badge blue"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>тапсырмалар блогы</span><span>{{ L.section }}</span>{% else %}<span>{{ L.section }} · {{ L.hours }} сағ</span>{% endif %}{% if L.bjb %}<span class="badge warn">БЖБ</span>{% endif %}
+        {% if L.nt %}<span class="badge ok">{{ L.nt }} тапсырма</span>{% if L.theory_ru %}<span class="badge blue">RU</span>{% endif %}{% elif L.theory %}<span class="badge blue">теория</span>{% else %}<span class="badge">бос</span>{% endif %}</div>
+      {% if L.kind != 'block' %}<div class="tools"><details class="blk"><summary class="badge chipbtn" title="Теориясыз, тек тапсырмалардан тұратын блок"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>Тапсырмалар блогы<svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+        <form method="post" action="{{ url_for('block_new', lid=L.id) }}" class="row small formrow">
+          <input type="hidden" name="next" value="{{ url_for('lessons_admin', grade=grade) }}">
+          <button class="btn sm" name="mode" value="empty">Бос блок</button>
+          <button class="btn sm" name="mode" value="copy" {{ 'disabled' if not L.nt }} title="Осы сабақтың тапсырмаларын теориясыз жеке блок етіп көшіреді">Сабақ тапсырмаларынан</button>
+        </form></details></div>{% endif %}
+    </div>
+    <div class="acts">
+      <a class="btn sm" href="{{ url_for('lesson', lid=L.id) }}" title="Көру" aria-label="Көру"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></a>
+      <a class="btn sm primary" href="{{ url_for('lesson_edit', lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Өңдеу</a>
+      <a class="btn sm" href="{{ url_for('lesson_edit', lid=L.id, lang='ru') }}" title="Орысша нұсқа">RU</a>
+      {% if L.kind == 'block' %}<form method="post" action="{{ url_for('block_delete', bid=L.id) }}" onsubmit="return confirm('Блокты өшіру керек пе?')"><button class="btn sm danger" title="Блокты өшіру" aria-label="Блокты өшіру"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button></form>{% endif %}
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

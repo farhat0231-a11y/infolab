@@ -1,0 +1,45 @@
+{% extends 'base.html' %}{% block title %}Мұғалім{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:16px"><h1 style="margin:0">Сыныптарым</h1>
+{% if pending %}<a class="btn" href="{{ url_for('review') }}"><svg class="ic" aria-hidden="true"><use href="#i-review"/></svg>Тексеруді күтуде: <b class="num">{{ pending }}</b></a>{% endif %}</div>
+
+<div class="grid side">
+  <div class="card">
+    <h2>Сыныптар</h2>
+    {% if not classes %}<div class="empty">Әлі сынып жоқ. Оң жақтағы форма арқылы бірінші сыныпты құрыңыз.</div>{% else %}
+    <div class="tablewrap" style="max-height:none"><table>
+      <tr><th>Сынып</th><th>Оқушы</th><th>Ашық сабақ</th><th>Сынып коды</th><th><span class="sr-only">Ашу</span></th></tr>
+      {% for c in classes %}
+      <tr>
+        <td><a href="{{ url_for('class_page', cid=c.id) }}"><b>{{ c.name }}</b></a>
+          <span class="badge blue">{{ c.grade }}-сынып</span>{% if c.lang == 'ru' %} <span class="badge">орыс</span>{% endif %}</td>
+        <td class="num">{{ c.n }}</td>
+        <td class="num">{{ c.nl }}</td>
+        <td><code class="code-chip">{{ c.code }}</code></td>
+        <td style="text-align:right;white-space:nowrap"><a class="btn sm primary" href="{{ url_for('class_live', cid=c.id) }}" title="Оқушылардың қазіргі күйін көру"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Сабақ режимі</a>
+          <a class="btn sm" href="{{ url_for('class_page', cid=c.id) }}">Ашу<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></a></td>
+      </tr>
+      {% endfor %}
+    </table></div>
+    {% endif %}
+  </div>
+  <form class="card" method="post" action="{{ url_for('class_new') }}">
+    <h2>Жаңа сынып</h2>
+    <div class="grid g2" style="gap:10px">
+      <div><label for="cn-name" style="margin-top:0">Атауы</label><input type="text" id="cn-name" name="name" placeholder="7А" required></div>
+      <div><label for="cn-grade" style="margin-top:0">Сынып</label><select id="cn-grade" name="grade">{% for gr in range(7,12) %}<option value="{{ gr }}">{{ gr }}</option>{% endfor %}</select></div>
+    </div>
+    <label for="cn-lang">Сабақ тілі</label><select id="cn-lang" name="lang"><option value="kk">Қазақша</option><option value="ru">Орысша (орыс тобы)</option></select>
+    <button class="btn primary block">Құру</button>
+    <p class="small muted" style="margin:12px 0 0">Құрылған соң оқушыларға <b>сынып кодын</b> беріңіз: олар сол кодпен тіркеледі.</p>
+  </form>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>Сабақ мазмұнының дайындығы</h2>
+  <div class="strip">
+  {% for f in filled %}<a class="cell wide {{ 'ok' if f.ready == f.total else 'part' if f.ready else 'todo' }}" href="{{ url_for('lessons_admin', grade=f.grade) }}" style="--fill:{{ (f.ready*100/f.total)|int }}%" aria-label="{{ f.grade }}-сынып: {{ f.ready }}/{{ f.total }}">{{ f.grade }}-сынып<b>{{ f.ready }}/{{ f.total }}</b></a>{% endfor %}
+  </div>
+  <p class="small muted" style="margin:12px 0 0">Әр ұяшық — тапсырмасы бар сабақтар үлесі. Ұяшықты басып, сол сыныптың сабақтарын өңдейсіз.</p>
+</div>
+{% endblock %}

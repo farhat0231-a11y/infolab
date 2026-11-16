@@ -1,0 +1,24 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Сабаққа дайындық') }} · {{ cls.name }}{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:14px">
+  <div><a class="small" href="{{ url_for('planner.index') }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ tr('Сабаққа дайындық') }}</a>
+    <h1 style="margin:6px 0 0">{{ cls.name }} <span class="badge blue">{{ tr('{n}-сынып').format(n=cls.grade) }}</span></h1></div>
+  <div class="row"><a class="btn" href="{{ url_for('planner.export_zip', cid=cls.id, quarter=quarter) }}"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>{{ tr('Тоқсан ҚМЖ-сы (ZIP)') }}</a>
+  <div class="seg" role="group" aria-label="{{ tr('Тоқсан') }}">{% for qn in range(1,5) %}<a class="{{ 'on' if quarter==qn }}" href="?q={{ qn }}"{% if quarter==qn %} aria-current="true"{% endif %}>{{ tr('{n}-тоқсан').format(n=qn) }}</a>{% endfor %}</div></div>
+</div>
+<div class="card">
+  {% if not lessons %}<div class="empty">{{ tr('Бұл тоқсанда сабақ жоқ.') }}</div>{% endif %}
+  {% for L in lessons %}
+  <div class="lrow {{ 'open' if L.plan_id }}">
+    <span class="n">{{ lnum(L) }}</span>
+    <div class="t"><a href="{{ url_for('planner.edit', cid=cls.id, lid=L.id) }}"><b>{{ L.title }}</b></a>
+      <div class="sec meta"><span>{{ L.section }}</span>
+        {% if L.plan_id %}<span class="badge ok"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>{{ tr('ҚМЖ дайын') }}</span>
+          <span class="badge {{ '' if mins[L.id] == total else 'warn' }} num">{{ mins[L.id] }} / {{ total }} {{ tr('мин') }}</span>
+        {% else %}<span class="badge">{{ tr('ҚМЖ жоқ') }}</span>{% endif %}</div>
+    </div>
+    <div class="acts"><a class="btn sm" href="{{ url_for('planner.edit', cid=cls.id, lid=L.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>{{ tr('Жоспар') }}</a></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

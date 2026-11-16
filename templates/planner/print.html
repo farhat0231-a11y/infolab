@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="{{ view_lang() }}"><head><meta charset="utf-8">
+<title>{{ L.title }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='slides.css') }}">
+<style>
+@page{size:1280px 720px;margin:0}
+html,body{background:#fff;margin:0}
+.pg{width:1280px;height:720px;page-break-after:always;break-after:page;overflow:hidden}
+.pg .slide{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg .slide::before,.pg .slide::after,.slide pre.code,.slide th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.bar{position:sticky;top:0;background:var(--shell);color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;font:600 15px var(--font)}
+.bar button{font:inherit;padding:6px 14px;border-radius:6px;border:0;cursor:pointer}
+@media print{.bar{display:none}}
+@media screen{body{background:#cfd8d4}.pg{margin:16px auto;box-shadow:0 2px 10px rgba(0,0,0,.2)}}
+</style></head>
+<body>
+<div class="bar"><span>{{ tr('PDF: ашылған терезеде «Принтер → PDF ретінде сақтау» таңдаңыз.') }}</span><button type="button" onclick="window.print()">{{ tr('Басып шығару / PDF') }}</button></div>
+{% for s in slides %}<div class="pg"><div class="slide">{{ s.html|safe }}</div></div>{% endfor %}
+<script>if (location.search.indexOf('print=1') >= 0) window.addEventListener('load', () => setTimeout(() => window.print(), 400));</script>
+</body></html>

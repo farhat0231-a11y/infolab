@@ -1,0 +1,26 @@
+# ── Оқушылардың деректері мен құпиялар (ешқашан GitHub-қа салмау) ──
+data/*
+!data/curriculum.json
+*.db
+*.db-*
+secret_key
+*.log
+.env
+tekseru/
+
+# ── Оқулықтар (авторлық құқық) және үлкен медиа файлдар ──
+*.pdf
+video-nusqaulyq/*
+!video-nusqaulyq/*.md
+presentation/video/
+
+# ── Python ──
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# ── Жергілікті құралдар мен жүйе файлдары ──
+.claude/
+.impeccable/
+.DS_Store

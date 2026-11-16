@@ -1,0 +1,76 @@
+{% extends 'base.html' %}{% block title %}Сабақ режимі · {{ cls.name }}{% endblock %}
+{% block body %}
+<style>
+.live-sum{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.live-sum .badge{font-size:.875rem;padding:4px 10px}
+table.live{width:100%;border-collapse:collapse}
+table.live td,table.live th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.live td.c,table.live th.c{text-align:center}
+table.live tr.off td{color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--line-strong)}
+.dot.here{background:var(--ok)}.dot.away{background:var(--bad)}.dot.other{background:var(--warn)}
+.bar{display:inline-block;width:80px;height:8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);vertical-align:middle;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.flag{font-weight:700;color:var(--bad)}
+</style>
+<div class="spread" style="margin-bottom:12px">
+  <div><a class="small" href="{{ url_for('class_page', cid=cls.id) }}"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg>{{ cls.name }}</a>
+    <h1 style="margin:6px 0 0">Сабақ режимі · {{ cls.name }}</h1></div>
+  {% if lessons %}
+  <form method="get" class="row" style="gap:6px"><label for="lv-lesson" style="margin:0">Сабақ:</label>
+    <select id="lv-lesson" name="lesson" onchange="this.form.submit()" style="width:auto;max-width:420px">
+      {% for x in lessons %}<option value="{{ x.id }}" {{ 'selected' if L and x.id == L.id }}>{{ lnum(x) }} · {{ x.title }}</option>{% endfor %}
+    </select></form>
+  {% endif %}
+</div>
+{% if not L %}<div class="card empty">Бұл сыныпқа тапсырмасы бар сабақ әлі ашылмаған.</div>{% else %}
+<p class="muted small" style="margin:0 0 8px">Кесте 10 секунд сайын өздігінен жаңарады. <span id="lv-time"></span></p>
+<div class="live-sum" id="lv-sum" aria-live="polite"></div>
+<div class="tablewrap">
+<table class="live">
+  <caption class="sr-only">Сабақ режимі: {{ L.title }}</caption>
+  <thead><tr><th scope="col">Оқушы</th><th scope="col">Қазір</th><th scope="col">Орындалды</th><th scope="col" class="c">Нәтиже</th>
+    <th scope="col" class="c" title="Сабақ бетінен басқа терезеге, ЖИ панеліне шыққан рет саны">Беттен шықты</th>
+    <th scope="col" class="c" title="Жауап өрісіне мәтін қоюға тырысқан рет саны (бөгелді)">Қоюға тырысты</th></tr></thead>
+  <tbody id="lv-body"></tbody>
+</table>
+</div>
+<p class="muted small" style="margin-top:8px">Қызыл белгі дәлел емес, тек ескерту. Оқушымен сөйлесіп, жауабын түсіндіріп беруін сұраңыз.</p>
+<script>
+(function(){
+  const LESSONS = {{ lessons|map(attribute='id')|list|tojson }}, TITLES = {{ lessons|map(attribute='title')|list|tojson }};
+  const title = id => { const i = LESSONS.indexOf(id); return i < 0 ? 'басқа бет' : TITLES[i]; };
+  const detail = id => {{ url_for('student_detail', uid=0)|tojson }}.replace(/0$/, id) + '?lesson={{ L.id }}';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const STATE = {here: 'Сабақта', away: 'Беттен тыс', other: 'Басқа сабақта', off: 'Желіде емес'};
+  function render(d){
+    const cnt = {here: 0, away: 0, other: 0, off: 0}; let flagged = 0;
+    document.getElementById('lv-body').innerHTML = d.rows.map(r => {
+      cnt[r.state]++;
+      const flag = r.away_n >= 3 || r.pastes >= 2; if(flag) flagged++;
+      let now = `<span class="dot ${r.state}" aria-hidden="true"></span>${STATE[r.state]}`;
+      if(r.state === 'here' && r.task) now += ` · ${r.task}-тапсырма`;
+      if(r.state === 'other') now += ` · <span class="small">${esc(title(r.other))}</span>`;
+      const pct = r.nt ? Math.round(r.done * 100 / r.nt) : 0;
+      const mins = (r.away_secs / 60).toFixed(1);
+      return `<tr class="${r.state}">
+        <td><a href="${detail(r.id)}">${esc(r.name)}</a>${flag ? ' <span class="flag" title="Күдікті белсенділік">⚠</span>' : ''}</td>
+        <td>${now}</td>
+        <td><span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span> ${r.done}/${r.nt}${r.pending ? ' <svg class="ic pend" aria-hidden="true"><use href="#i-clock"/></svg>' : ''}</td>
+        <td class="c">${r.percent === null ? '·' : r.percent + '%'}</td>
+        <td class="c">${r.away_n ? `<span class="${r.away_n >= 3 ? 'flag' : ''}">${r.away_n}</span> <span class="muted small">(${mins} мин)</span>` : '·'}</td>
+        <td class="c">${r.pastes ? `<span class="${r.pastes >= 2 ? 'flag' : ''}">${r.pastes}</span>` : '·'}</td></tr>`;
+    }).join('') || '<tr><td colspan="6" class="muted">Сыныпта оқушы жоқ.</td></tr>';
+    document.getElementById('lv-sum').innerHTML =
+      `<span class="badge ok">Сабақта: ${cnt.here}</span><span class="badge bad">Беттен тыс: ${cnt.away}</span>` +
+      `<span class="badge warn">Басқа сабақта: ${cnt.other}</span><span class="badge">Желіде емес: ${cnt.off}</span>` +
+      (flagged ? `<span class="badge bad">⚠ Назар аударыңыз: ${flagged}</span>` : '');
+    document.getElementById('lv-time').textContent = 'Соңғы жаңарту: ' + d.time;
+  }
+  render({rows: {{ rows|tojson }}, time: new Date().toLocaleTimeString()});
+  const url = location.pathname + '?lesson={{ L.id }}&format=json';
+  setInterval(() => { if(!document.hidden) fetch(url).then(r => r.ok ? r.json() : null).then(d => d && render(d)).catch(() => {}); }, 10000);
+})();
+</script>
+{% endif %}
+{% endblock %}

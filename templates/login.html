@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="{{ view_lang() }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ tr('Кіру') }} · InfoLab</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317454b'/%3E%3Crect x='5' y='8' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='13' y='8' width='6' height='6' rx='1.5' fill='%23ffd166'/%3E%3Crect x='21' y='8' width='6' height='6' rx='1.5' fill='%23ff8a8a'/%3E%3Crect x='5' y='18' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='13' y='18' width='6' height='6' rx='1.5' fill='%234fd69a'/%3E%3Crect x='21' y='18' width='6' height='6' rx='1.5' fill='%233a6a71'/%3E%3C/svg%3E"></head>
+<body>
+{% include '_icons.html' %}
+<main class="auth" id="main">
+  <div class="art">
+    <div class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-mark"/></svg>InfoLab</div>
+    <div>
+      <div class="strip sm" aria-hidden="true"><span class="cell ok">1<b>1/1</b></span><span class="cell ok">2<b>2/2</b></span><span class="cell part" style="--fill:50%">3<b>1/2</b></span><span class="cell cur">4<b>—</b></span><span class="cell todo">5<b>0/3</b></span></div>
+      <h1>{{ tr('Информатиканы оқы, кодта, ұпай жина.') }}</h1>
+      <p>{{ tr('7–11 сыныптарға арналған теория, практикалық тапсырмалар, автоматты тексеру және күнделікті рейтинг — бір жерде.') }}</p>
+    </div>
+    <div class="code" aria-hidden="true">xp = 0
+for сабақ in тоқсан:
+    оқы(сабақ.теория)
+    xp += орында(сабақ.тапсырмалар)
+print("Деңгей:", xp // 100)</div>
+  </div>
+  <div class="form">
+    <div class="lang"><span class="langsw small">{% set cur = view_lang() %}<a href="{{ url_for('set_lang', code='kk', next=request.full_path) }}" class="{{ 'on' if cur == 'kk' }}">Қаз</a><a href="{{ url_for('set_lang', code='ru', next=request.full_path) }}" class="{{ 'on' if cur == 'ru' }}">Рус</a></span></div>
+    <div class="card">
+      <h1 style="font-size:1.5rem">{{ tr('Жүйеге кіру') }}</h1>
+      {% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}<div class="flash {{ c }}" role="{{ 'alert' if c == 'error' else 'status' }}">{{ m }}</div>{% endfor %}{% endwith %}
+      <form method="post">
+        <label for="f-user">{{ tr('Логин') }}</label><input type="text" id="f-user" name="username" required autofocus autocomplete="off" autocapitalize="none" spellcheck="false">
+        <label for="f-pass">{{ tr('Құпия сөз') }}</label><input type="password" id="f-pass" name="password" required autocomplete="current-password">
+        <button class="btn primary block">{{ tr('Кіру') }}</button>
+      </form>
+      <p class="muted small" style="margin:18px 0 0">{{ tr('Аккаунтыңыз жоқ па?') }} <a href="{{ url_for('register') }}">{{ tr('Тіркелу') }}</a></p>
+    </div>
+  </div>
+</main>
+</body></html>

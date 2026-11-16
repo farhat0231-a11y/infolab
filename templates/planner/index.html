@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Сабаққа дайындық') }}{% endblock %}
+{% block body %}
+<div class="spread" style="margin-bottom:16px"><h1 style="margin:0">{{ tr('Сабаққа дайындық') }}</h1></div>
+<p class="muted">{{ tr('Сыныпты таңдаңыз: әр сабаққа ҚМЖ, слайд және сөзіңізді дайындайсыз. Бұл бөлімді оқушылар көрмейді.') }}</p>
+{% if not classes %}<div class="card empty">{{ tr('Әлі сынып жоқ.') }} <a href="{{ url_for('teacher_home') }}">{{ tr('Сынып құру') }}</a></div>{% else %}
+<div class="grid g3">
+  {% for c in classes %}
+  <a class="card pcard" href="{{ url_for('planner.klass', cid=c.id) }}">
+    <h2 style="margin:0 0 6px">{{ c.name }}</h2>
+    <div class="row small"><span class="badge blue">{{ tr('{n}-сынып').format(n=c.grade) }}</span>{% if c.lang == 'ru' %}<span class="badge">{{ tr('орыс') }}</span>{% endif %}<span class="muted">{{ tr('Оқушы') }}: <b class="num">{{ c.n }}</b></span></div>
+    <div class="small" style="margin-top:10px"><span class="badge {{ 'ok' if c.plans else '' }}">{{ tr('ҚМЖ дайын') }}: <b class="num">{{ c.plans }}</b></span></div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

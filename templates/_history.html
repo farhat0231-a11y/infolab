@@ -1,0 +1,14 @@
+{# Оқушының алдыңғы әрекеттері: соңғы (қазіргі) жауаптан басқасы #}
+{% macro history(hist, data) %}{% if hist|length > 1 %}
+<details class="hist">
+  <summary>Алдыңғы әрекеттер ({{ hist|length - 1 }})</summary>
+  <ol>{% for h in hist[:-1] %}
+    <li><div class="muted small num">{{ h.n }}-әрекет · {{ h.created }} · {% if h.status == 'pending' %}тексеруге жіберілді{% else %}{{ h.score|fmt }} балл{% endif %}</div>
+      {% set a = h.answer %}
+      {% if a is mapping and a.file %}<div><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg> {{ a.name }} <span class="muted small">(файл кейін ауыстырылған)</span></div>
+      {% elif data and data.options and a is not none and a is not string %}<div>Таңдады: {% for x in (a if a is iterable else [a]) %}<b>{{ data.options[x|int] }}</b>{{ '; ' if not loop.last }}{% endfor %}</div>
+      {% else %}<pre class="hist-ans">{{ a }}</pre>{% endif %}
+    </li>{% endfor %}
+  </ol>
+</details>
+{% endif %}{% endmacro %}

@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InfoLab — қорғау</title>
+<style>
+/*FONTS*/
+:root{
+  --flap:#0b0b0d; --flap-2:#17181b; --steel:#2a2d31; --steel-mid:#5b5e63; --steel-light:#a7aaaf;
+  --frame:#0e2a2f; --frame-2:#17454b; --letter:#f2f2f2;
+  --go:#2fbf71; --wait:#ffb000; --stop:#e5484d;
+  --ui-bg:#eef2f0; --ui-ink:#16242a; --ui-muted:#52646b; --ui-line:#d5ddd9; --ok:#157a49; --amber:#e8a21a; --bad:#b32f2f;
+  --mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,monospace;
+  --board:"PT Sans Narrow","Arial Narrow",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#061517;overflow:hidden}
+body{font-family:var(--board);color:var(--letter);-webkit-font-smoothing:antialiased}
+::selection{background:var(--wait);color:var(--flap)}
+.stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;background:var(--frame);
+  background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.4px);background-size:7px 7px}
+.slide{position:absolute;inset:0;padding:64px 80px 0;visibility:hidden}
+.slide.on{visibility:visible}
+
+.housing{background:var(--steel);border-radius:10px;padding:22px;box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
+
+.row{display:flex;white-space:nowrap}
+.ch{position:relative;display:inline-flex;align-items:center;justify-content:center;width:.68em;height:1.16em;margin-right:.07em;
+  background:linear-gradient(var(--flap-2) 0 50%,var(--flap) 50% 100%);border-radius:.07em;color:var(--letter);font-weight:700;line-height:1;overflow:hidden;
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.04)}
+.ch::after{content:"";position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;background:#000}
+.ch b{display:block;font-weight:700;transform-origin:50% 50%}
+.ch.t b{animation:flip 70ms linear}
+@keyframes flip{0%{transform:scaleY(1)}50%{transform:scaleY(.1);filter:brightness(.6)}100%{transform:scaleY(1)}}
+.go .ch{color:var(--go)} .wait .ch{color:var(--wait)} .stop .ch{color:var(--stop)} .dim .ch{color:var(--steel-light)}
+
+.top{position:absolute;left:80px;right:80px;top:18px;display:flex;align-items:center;justify-content:space-between;font-size:22px}
+.top .brand{letter-spacing:.32em;font-weight:700}
+.top .brand i{font-style:normal;color:var(--wait)}
+.top .right{display:flex;gap:28px;align-items:center}
+.clock{font-family:var(--mono);font-size:22px;color:var(--steel-light);font-variant-numeric:tabular-nums}
+.foot{position:absolute;left:80px;right:80px;bottom:20px;display:flex;justify-content:space-between;font-size:18px;color:var(--steel-light);letter-spacing:.2em}
+.foot kbd{font-family:var(--mono);letter-spacing:0;border:1px solid var(--steel-mid);border-radius:4px;padding:1px 7px;margin:0 3px;color:var(--letter)}
+
+.dep{width:100%;border-collapse:separate;border-spacing:0 8px}
+.dep th{font-weight:700;letter-spacing:.3em;font-size:20px;color:var(--steel-light);text-align:left;padding:0 14px 6px 0}
+.dep td{padding:0 14px 0 0;vertical-align:middle}
+.dep tr.hl td .ch{background:linear-gradient(#2a2108 0 50%,#1d1705 50%)}
+.lamp{display:inline-block;width:22px;height:22px;border-radius:50%;background:#1c1d20;box-shadow:inset 0 0 0 2px #000}
+.lamp.go{background:var(--go);box-shadow:inset 0 0 0 2px #000,inset 0 5px 6px rgba(255,255,255,.35)}
+.lamp.wait{background:var(--wait);box-shadow:inset 0 0 0 2px #000,inset 0 5px 6px rgba(255,255,255,.35)}
+.lamp.stop{background:var(--stop);box-shadow:inset 0 0 0 2px #000,inset 0 5px 6px rgba(255,255,255,.35)}
+.note{font-family:var(--board);font-size:30px;line-height:1.35;color:#d9e3e0;max-width:1180px;letter-spacing:.01em}
+.note b{color:var(--letter)}
+.src{font-size:19px;color:var(--steel-light);letter-spacing:.16em;margin-top:12px}
+
+.split{display:grid;grid-template-columns:640px 1fr;gap:48px;align-items:start}
+.screen{position:relative;background:var(--ui-bg);color:var(--ui-ink);border-radius:10px;height:880px;overflow:hidden;font-family:"Segoe UI",system-ui,Roboto,"Noto Sans",sans-serif;
+  box-shadow:0 22px 50px rgba(0,0,0,.5)}
+.screen .bar{min-height:58px;background:#0e2a2f;color:#eef6f3;display:flex;align-items:center;gap:22px;padding:15px 26px;font-size:19px;line-height:1.4}
+.screen .bar b{letter-spacing:.06em}
+.screen .bar .sp{flex:1}
+.screen .bar .xp{font-family:var(--mono);color:#ffd166}
+.dtag{font-family:var(--mono);font-size:15px;color:#b9d2cb;border:1px solid rgba(185,210,203,.5);border-radius:4px;padding:2px 8px;letter-spacing:.08em}
+[data-demo=auto] .pane{zoom:.95}
+.pane{padding:24px 30px}
+[data-demo=journal] .pane,[data-demo=plan] .pane{zoom:1.3}
+.card{background:#fff;border:1px solid var(--ui-line);border-radius:8px;padding:18px 22px;margin-bottom:14px}
+.card h4{font-size:17px;color:var(--ui-muted);font-weight:600;margin-bottom:10px}
+.q{font-size:22px;margin-bottom:10px}
+.opt{display:flex;align-items:center;gap:12px;border:1px solid var(--ui-line);border-radius:6px;padding:9px 14px;margin-bottom:8px;font-size:20px;transition:background .25s,border-color .25s}
+.opt .rb{width:18px;height:18px;border-radius:50%;border:2px solid #b4c2bb;transition:border .2s}
+.opt.sel{border-color:var(--ok);background:#e6f3ec}.opt.sel .rb{border:6px solid var(--ok)}
+.cells{display:flex;gap:8px}
+.cell{width:70px;height:48px;border-radius:6px;background:#e1e8e4;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:20px;color:#52646b;transition:background .35s,color .35s}
+.cell.cur{background:#fff;box-shadow:inset 0 0 0 2px #16242a;color:#16242a}
+.cell.ok{background:var(--ok);color:#fff}.cell.part{background:var(--amber);color:#16242a}
+.code{background:#0f1d21;color:#e6f1ee;font-family:var(--mono);font-size:19px;border-radius:6px;padding:12px 16px;min-height:78px;white-space:pre;line-height:1.5}
+.code .cur{display:inline-block;width:10px;height:21px;background:#ffd166;vertical-align:-3px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.tests{display:flex;gap:10px;margin-top:10px;font-family:var(--mono);font-size:17px}
+.tests span{border:1px solid var(--ui-line);border-radius:4px;padding:5px 10px;background:#fff;transition:background .3s,color .3s}
+.tests span.p{background:var(--ok);color:#fff;border-color:var(--ok)}
+.chk{list-style:none;font-size:19px}
+.chk li{display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ui-line);opacity:.2;transition:opacity .3s}
+.chk li.v{opacity:1}
+.mk{width:26px;height:26px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.mk svg{width:16px;height:16px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mk.y{background:var(--ok)}.mk.n{background:var(--bad)}
+.file{display:flex;align-items:center;gap:12px;font-size:19px;border:2px dashed #b4c2bb;border-radius:8px;padding:12px 14px;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s}
+.file svg{width:28px;height:28px;stroke:var(--ok);stroke-width:1.8;fill:none}
+.score{font-family:var(--mono);font-weight:700;font-size:22px}
+.jr{width:100%;border-collapse:collapse;font-size:19px}
+.jr th{background:#0e2a2f;color:#eef6f3;font-weight:600;padding:10px;text-align:center}
+.jr th:first-child{text-align:left}
+.jr td{border-bottom:1px solid var(--ui-line);padding:8px 10px;text-align:center;background:#fff}
+.jr td:first-child{text-align:left}
+.m{display:inline-flex;width:46px;height:34px;border-radius:5px;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;color:#fff;background:#e1e8e4;transform:scale(.4);opacity:0;transition:transform .35s cubic-bezier(.2,.9,.25,1.3),opacity .2s,background .3s}
+.m.in{transform:scale(1);opacity:1}.m.hi{background:var(--ok)}.m.mid{background:var(--amber);color:#16242a}.m.lo{background:var(--bad)}
+.m.pd{background:repeating-linear-gradient(45deg,#d5ddd9 0 6px,#f4f7f5 6px 12px);color:#16242a}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs span{border:1px solid var(--ui-line);border-radius:6px;padding:7px 14px;font-size:17px;background:#fff}
+.tabs span.on{background:#0e2a2f;color:#eef6f3;border-color:#0e2a2f}
+.qs{display:inline-flex;border:1px solid var(--ui-line);border-radius:6px;overflow:hidden}
+.qs span{padding:7px 16px;font-family:var(--mono);font-size:18px;border-right:1px solid var(--ui-line);transition:background .2s,color .2s}
+.qs span:last-child{border-right:0}.qs span.on{background:var(--ok);color:#fff}
+.btnx{display:inline-flex;gap:8px;align-items:center;border:1px solid #b4c2bb;border-radius:6px;padding:8px 14px;font-size:17px;background:#fff}
+.btnx svg{width:18px;height:18px;stroke:#0b6b74;fill:none;stroke-width:1.8}
+.btnx.pri{background:#0e2a2f;color:#eef6f3;border-color:#0e2a2f}
+.tl{display:flex;height:64px;border-radius:8px;overflow:hidden;border:1px solid #b4c2bb;background:#fff}
+.tl div{width:0;display:flex;align-items:center;padding-left:14px;font-family:var(--mono);font-weight:700;font-size:20px;white-space:nowrap;overflow:hidden;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.tl .a{background:#17454b;color:#fff}.tl .b{background:var(--ok);color:#fff}.tl .c{background:var(--amber);color:#16242a}
+.tlab{display:flex;justify-content:space-between;font-size:17px;color:var(--ui-muted);margin:8px 0 18px}
+.steps .st{display:grid;grid-template-columns:70px 1fr 64px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ui-line);font-size:20px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .45s cubic-bezier(.2,.8,.2,1)}
+.steps .st.in{opacity:1;transform:none}
+.steps .st b,.steps .st i{font-family:var(--mono);font-style:normal;color:var(--ui-muted)}
+.outs{display:flex;gap:12px;margin-top:22px}
+.outs span{display:inline-flex;gap:8px;align-items:center;border:1px solid #b4c2bb;border-radius:6px;padding:10px 14px;font-size:18px;background:#fff;transition:background .3s,color .3s,border-color .3s}
+.outs span.lit{background:#0e2a2f;color:#eef6f3;border-color:#0e2a2f}
+.outs svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tot{font-family:var(--mono);font-weight:700}
+.proj{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-top:22px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .5s cubic-bezier(.2,.8,.2,1)}
+.proj.in{opacity:1;transform:none}
+.pslide{background:#0f1d21;color:#e6f1ee;border-radius:8px;padding:18px 20px;min-height:170px}
+.pslide b{display:block;font-size:22px;margin-bottom:12px}
+.pslide code{display:block;white-space:pre;font-family:var(--mono);font-size:17px;color:#ffd166}
+.pside{background:#fff;border:1px solid var(--ui-line);border-radius:8px;padding:16px;font-size:16px;color:var(--ui-muted);display:flex;flex-direction:column;gap:10px}
+.ptime{font-family:var(--mono);font-size:34px;font-weight:700;color:#16242a}
+.net{width:100%;height:470px;display:block;margin:24px 0 20px}
+.net .ln{stroke:#9aa9a3;stroke-width:3;stroke-dasharray:10 8;fill:none}
+.net .ln.live{stroke:var(--ok);animation:dash 1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-36}}
+.net text{font-family:"Segoe UI",system-ui,sans-serif;font-size:24px;fill:#16242a}
+.net .x{stroke:var(--bad);stroke-width:8;stroke-linecap:round;transition:opacity .3s}
+.wm{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;background-repeat:repeat}
+.wm.in{opacity:1}
+.dw rect,.dw path{stroke:#16242a;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;fill-opacity:1}
+.dw path:not([fill]){fill:none}
+.tcard{position:relative;margin:0 30px;background:#fff;border:1px solid var(--ui-line);border-radius:8px;padding:20px 22px;overflow:hidden}
+.tcard h4{font-size:17px;color:var(--ui-muted);font-weight:600;margin-bottom:10px}
+.tcard .wm{inset:0}
+.tsub{font-size:16px;color:var(--ui-muted)}
+
+.hint{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);font-size:20px;letter-spacing:.3em;color:var(--steel-light)}
+html.still *{transition:none!important;animation:none!important}
+.slide:not([data-demo]){display:flex;flex-direction:column;justify-content:center;padding-bottom:80px}
+.slide:not([data-demo]) > .housing:first-child{margin-top:0!important}
+[data-demo=net] .screen{height:auto;padding-bottom:28px}
+.narrow .slide{padding:56px 40px 0}
+.narrow .top,.narrow .foot{left:40px;right:40px}
+.narrow .top{font-size:26px}.narrow .clock{font-size:26px}.narrow .foot{font-size:21px}
+.narrow .split{grid-template-columns:500px 1fr;gap:30px}
+.narrow .screen{height:auto;padding-bottom:24px}
+.narrow .note{font-size:30px}
+@media (prefers-reduced-motion:reduce){.ch.t b{animation:none}.m,.tl div,.steps .st,.file{transition:none}.net .ln.live{animation:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+<section class="slide">
+  <div class="housing" style="margin-top:70px;padding:34px 34px 30px">
+    <div class="board" data-size="168" data-row="INFOLAB"></div>
+    <div class="board" data-size="64" data-row="ИНФОРМАТИКА · 7–11 СЫНЫП" style="margin-top:24px"></div>
+  </div>
+  <div class="housing" style="margin-top:36px">
+    <table class="dep" data-size="40">
+      <tr><th>РЕЙС</th><th>БАҒЫТ</th><th>КІМГЕ</th><th>КҮЙІ</th><th></th></tr>
+      <tr><td data-f="A1"></td><td data-f="ТЕКСЕРУ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="B2"></td><td data-f="ЖУРНАЛ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="C3"></td><td data-f="САБАҚҚА ДАЙЫНДЫҚ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="D4"></td><td data-f="ИНТЕРНЕТСІЗ · 2 ТІЛ"></td><td data-f="БАРЛЫҒЫ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+    </table>
+  </div>
+  <div class="hint">→ КЕЛЕСІ</div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:60px">
+    <div class="board" data-size="76" data-row="МҰҒАЛІМНІҢ УАҚЫТЫ"></div>
+    <div class="board" data-size="76" data-row="ҚАЙДА КЕТЕДІ?" style="margin-top:12px"></div>
+  </div>
+  <div class="housing" style="margin-top:34px">
+    <table class="dep" data-size="46">
+      <tr><th>ҚАШАН</th><th>ЖҰМЫС</th><th>КҮЙІ</th><th></th></tr>
+      <tr><td data-f="САБАҚТАН КЕЙІН" class="dim"></td><td data-f="ДӘПТЕР МЕН ФАЙЛ ТЕКСЕРУ"></td><td data-f="КЕШІГУДЕ" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr><td data-f="ТОҚСАН СОҢЫ" class="dim"></td><td data-f="ЖУРНАЛ, ПАЙЫЗ, БАҒА"></td><td data-f="КЕШІГУДЕ" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr><td data-f="САБАҚҚА ДЕЙІН" class="dim"></td><td data-f="ҚМЖ, СЛАЙД ЖАЗУ"></td><td data-f="КЕШІГУДЕ" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr><td data-f="ОРЫС СЫНЫБЫ" class="dim"></td><td data-f="МАТЕРИАЛДЫ АУДАРУ"></td><td data-f="КЕШІГУДЕ" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr class="stop"><td data-f="ИНТЕРНЕТ ЖОҚ"></td><td data-f="ОНЛАЙН ПЛАТФОРМАЛАР"></td><td data-f="ТОҚТАДЫ" class="stop"></td><td><span class="lamp stop"></span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:60px">
+    <div class="board" data-size="76" data-row="БІР ПЛАТФОРМА."></div>
+    <div class="board" data-size="76" data-row="БАРЛЫҚ ЖҰМЫС БІР ЖЕРДЕ." style="margin-top:12px"></div>
+  </div>
+  <div class="housing" style="margin-top:34px">
+    <table class="dep" data-size="44">
+      <tr><th>САН</th><th>НЕ</th><th></th></tr>
+      <tr><td data-f="  110"></td><td data-f="КТЖ САБАҒЫ, 7–11 СЫНЫП" class="dim"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="  300"></td><td data-f="ДАЙЫН ТАПСЫРМА (297 ОРЫСША)" class="dim"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="  493"></td><td data-f="ОҚУШЫ ЖАУАБЫ ЖІБЕРІЛДІ" class="dim"></td><td><span class="lamp go"></span></td></tr>
+      <tr class="hl"><td data-f="  379" class="go"></td><td data-f="ТЕСТ, ҚЫСҚА ЖАУАП, КОД — САЙТ ТЕКСЕРДІ"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="18/87"></td><td data-f="СЫНЫП / ОҚУШЫ ТІРКЕЛГЕН" class="dim"></td><td><span class="lamp go"></span></td></tr>
+    </table>
+    <div class="src">ДЕРЕККӨЗ: INFOLAB ДЕРЕКҚОРЫ, 03.11.2026 · СЫНАҚ ЖАЗБАЛАРЫ АРАЛАСУЫ МҮМКІН</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:56px">
+    <div class="board" data-size="64" data-row="ЖӨНЕЛТУ ТАБЛОСЫ"></div>
+  </div>
+  <div class="housing" style="margin-top:26px">
+    <table class="dep" data-size="44">
+      <tr><th>РЕЙС</th><th>ФУНКЦИЯ</th><th>КІМГЕ</th><th>КҮЙІ</th><th></th></tr>
+      <tr><td data-f="A1"></td><td data-f="ТЕСТ, КОД, EXCEL АВТОТЕКСЕРУ"></td><td data-f="ОҚУШЫ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="B2"></td><td data-f="ЖУРНАЛ ЖӘНЕ ТОҚСАН БАҒАСЫ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="B3"></td><td data-f="РУБРИКА, ПІКІР БАНКІ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="C4"></td><td data-f="ҚМЖ 40′, СЛАЙД, ПРОЕКТОР"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="D5"></td><td data-f="МЕКТЕП ЖЕЛІСІ, ИНТЕРНЕТСІЗ"></td><td data-f="БАРЛЫҒЫ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="D6"></td><td data-f="ҚАЗАҚША / ОРЫСША"></td><td data-f="БАРЛЫҒЫ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="E7"></td><td data-f="XP, ДЕҢГЕЙ, РЕЙТИНГ"></td><td data-f="ОҚУШЫ" class="dim"></td><td data-f="ДАЙЫН" class="go"></td><td><span class="lamp go"></span></td></tr>
+      <tr><td data-f="E8"></td><td data-f="КӨШІРУДЕН ҚОРҒАУ"></td><td data-f="ОҚУШЫ" class="dim"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr><td data-f="F9"></td><td data-f="АШЫҚ ЖАУАПҚА AI ҰСЫНЫСЫ"></td><td data-f="МҰҒАЛІМ" class="dim"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide" data-demo="auto">
+  <div class="split" style="margin-top:56px">
+    <div>
+      <div class="housing"><div class="board" data-size="44" data-row="РЕЙС A1"></div><div class="board go" data-size="44" data-row="АВТОТЕКСЕРУ" style="margin-top:10px"></div></div>
+      <p class="note" style="margin-top:34px">Оқушы жауап береді — баға <b>бірден</b> шығады. Тест, қысқа жауап, <b>Python код</b> (жасырын тесттермен) және <b>Excel/Word файлы</b> ережелер бойынша тексеріледі.</p>
+      <p class="note" style="margin-top:22px">Excel файлы 0 балл алса, сайт оны мұғалімге жібереді: басқа файл жүктелген болуы мүмкін.</p>
+    </div>
+    <div class="screen">
+      <div class="bar"><b>InfoLab</b><span>8-сынып · Электрондық кестелер</span><span class="sp"></span><span class="dtag">ДЕМО</span><span class="xp" data-xp>XP 1240</span></div>
+      <div class="pane">
+        <div class="card"><h4>Тапсырмалар</h4><div class="cells"><div class="cell">1</div><div class="cell">2</div><div class="cell">3</div><div class="cell">4</div><div class="cell">5</div><div class="cell">6</div></div></div>
+        <div class="card"><h4>1 · Тест</h4><div class="q">Орташа мәнді қай функция есептейді?</div>
+          <div class="opt"><span class="rb"></span>СУММ</div><div class="opt"><span class="rb"></span>СРЗНАЧ</div></div>
+        <div class="card"><h4>2 · Python код</h4><div class="code" data-code></div><div class="tests"><span>тест 1</span><span>тест 2 (жасырын)</span></div></div>
+        <div class="card"><h4>3 · Практикалық жұмыс</h4>
+          <div class="file" data-file><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>Жалақы.xlsx<span style="flex:1"></span><span class="score" data-fs></span></div>
+          <ul class="chk" style="margin-top:8px">
+            <li><span class="mk y"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Деректер мен коэффициент енгізілген</li>
+            <li><span class="mk y"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Абсолютті сілтеме $C$2 бар</li>
+            <li><span class="mk n"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Формула барлық жолға көшірілмеген</li>
+          </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-demo="journal">
+  <div class="split" style="margin-top:56px">
+    <div>
+      <div class="housing"><div class="board" data-size="44" data-row="РЕЙС B2–B3"></div><div class="board go" data-size="44" data-row="ЖУРНАЛ · ТЕКСЕРУ" style="margin-top:10px"></div></div>
+      <p class="note" style="margin-top:34px">Баға журналға <b>өзі түседі</b>: 10 балдық сабақ бағасы, тоқсан пайызы, 5 балдық баға. Excel-ге (CSV) жүктеледі.</p>
+      <p class="note" style="margin-top:22px">Мұғалімге тек ашық жауап қалады: <b>сынып бойынша бөлінген</b>, рубрика <b>0 / ½ / толық</b> түймелерімен, дайын пікірлер банкімен.</p>
+    </div>
+    <div class="screen">
+      <div class="bar"><b>InfoLab</b><span>Журнал · 8А · 2-тоқсан</span><span class="sp"></span><span class="dtag">ДЕМО</span></div>
+      <div class="pane">
+        <table class="jr">
+          <tr><th>Оқушы</th><th>1</th><th>2</th><th>3</th><th>4</th><th>%</th></tr>
+          <tr><td>Асанов А.</td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td class="tot" data-p></td></tr>
+          <tr><td>Бекова Д.</td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td class="tot" data-p></td></tr>
+          <tr><td>Серікұлы С.</td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td class="tot" data-p></td></tr>
+          <tr><td>Нұрланова А.</td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td><span class="m"></span></td><td class="tot" data-p></td></tr>
+        </table>
+        <div class="card" style="margin-top:22px">
+          <div class="tabs"><span class="on">Барлығы (3)</span><span>8А (2)</span><span>9Б (1)</span></div>
+          <h4>8А · Серікұлы С. · Ашық жауап</h4>
+          <div class="q" style="font-size:19px">«Абсолютті сілтеме курс жазылған ұяшықты бекітеді, сондықтан формуланы көшіргенде қате шықпайды…»</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:18px;padding:8px 0;border-top:1px solid var(--ui-line)"><span>Курстың тұрақтылығын түсіндірді</span><span class="qs"><span>0</span><span>½</span><span>1</span></span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:18px;padding:8px 0;border-top:1px solid var(--ui-line)"><span>Мысалмен дәлелдеді</span><span class="qs"><span>0</span><span>½</span><span>1</span></span></div>
+          <div style="display:flex;gap:10px;margin-top:10px"><span class="btnx"><svg viewBox="0 0 24 24"><path d="M12 4l1.8 4.7L18.5 10l-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.3z"/></svg>AI ұсынысы</span><span class="btnx pri" data-grade>Бағалау</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-demo="plan">
+  <div class="split" style="margin-top:56px">
+    <div>
+      <div class="housing"><div class="board" data-size="44" data-row="РЕЙС C4"></div><div class="board go" data-size="44" data-row="САБАҚҚА ДАЙЫНДЫҚ" style="margin-top:10px"></div></div>
+      <p class="note" style="margin-top:34px">Сабақты таңдайсыз — <b>ҚМЖ 40 минутқа</b> кезеңдерімен жиналады, тапсырмалар сайттан қосылады.</p>
+      <p class="note" style="margin-top:22px"><b>.docx</b> жүктейсіз, слайдты <b>проекторға</b> шығарасыз: мұғалім экранында таймер мен сөз үлгісі. 2-тоқсанның <b>26 сабағына</b> дайын слайд кітапханасы бар.</p>
+    </div>
+    <div class="screen">
+      <div class="bar"><b>InfoLab</b><span>ҚМЖ · 8-сынып · For циклі</span><span class="sp"></span><span class="dtag">ДЕМО</span></div>
+      <div class="pane">
+        <div class="tl" data-tl><div class="a" data-w="17.5">7′ басы</div><div class="b" data-w="65">26′ ортасы</div><div class="c" data-w="17.5">7′ соңы</div></div>
+        <div class="tlab"><span>Басы</span><span>Ортасы</span><span>Соңы · <b class="tot" data-sum>0′</b></span></div>
+        <div class="steps">
+          <div class="st"><b>00′</b><span>Ұйымдастыру, үй жұмысын тексеру</span><i>7′</i></div>
+          <div class="st"><b>07′</b><span>Жаңа тақырып: for циклі, range()</span><i>12′</i></div>
+          <div class="st"><b>19′</b><span>Практика: сайттағы тапсырмалар 1–5</span><i>14′</i></div>
+          <div class="st"><b>33′</b><span>Рефлексия, бағалау</span><i>7′</i></div>
+        </div>
+        <div class="outs">
+          <span><svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 11L12 15.5 16.5 11M5 19h14"/></svg>ҚМЖ.docx</span>
+          <span><svg viewBox="0 0 24 24"><path d="M8 5.5l10 6.5-10 6.5z"/></svg>Проектор режимі</span>
+          <span><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4"/></svg>PDF слайдтар</span>
+        </div>
+        <div class="proj" data-proj><div class="pslide"><b>For циклі және range()</b><code>for i in range(5):
+    print(i)</code></div><div class="pside"><span class="ptime">12:00</span><span>Мұғалім сөзі: «Қайталау саны белгілі болса, for қолданамыз…»</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-demo="net">
+  <div class="split" style="margin-top:56px">
+    <div>
+      <div class="housing"><div class="board" data-size="44" data-row="РЕЙС D5–D6"></div><div class="board go" data-size="44" data-row="ИНТЕРНЕТСІЗ · 2 ТІЛ" style="margin-top:10px"></div></div>
+      <p class="note" style="margin-top:30px">Бір ноутбук — сервер. Оқушылар мектеп желісінен <b>http://infolab.local</b> (тұрақты атау) арқылы кіреді. Интернет керек емес.</p>
+      <div class="housing" style="margin-top:26px">
+        <div class="board" data-size="40" data-row="ТАПСЫРМА" data-alt="ЗАДАНИЕ"></div>
+        <div class="board" data-size="40" data-row="ЖАУАП БЕРУ" data-alt="ОТВЕТИТЬ" style="margin-top:8px"></div>
+        <div class="board go" data-size="40" data-row="ДҰРЫС!" data-alt="ВЕРНО!" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="screen">
+      <div class="bar"><b>Мектеп желісі</b><span class="sp"></span><span class="dtag">ДЕМО</span><span data-lang>ҚАЗ</span></div>
+      <svg class="net" viewBox="0 0 1100 470" role="img" aria-label="Ноутбук-сервер мектеп желісі арқылы компьютерлерге қосылған, интернет қажет емес">
+        <g class="dw">
+          <path d="M150 66a44 44 0 0 1 84-16 36 36 0 0 1 56 33 32 32 0 0 1-6 63H154a40 40 0 0 1-4-80z" fill="#fff"/>
+          <line class="x" x1="182" y1="52" x2="282" y2="140" data-x/><line class="x" x1="282" y1="52" x2="182" y2="140" data-x/>
+        </g>
+        <text x="330" y="104">Интернет</text>
+        <path class="ln" d="M230 230 L230 152"/>
+        <g class="dw"><rect x="150" y="236" width="170" height="108" rx="8" fill="#fff"/><rect x="164" y="250" width="142" height="80" rx="3" fill="#e6f3ec" stroke-width="2"/><path d="M118 362h234l-16-18H134z" fill="#fff"/></g>
+        <text x="132" y="400">Ноутбук · сервер</text>
+        <path class="ln" data-l d="M320 290 L640 70"/><path class="ln" data-l d="M320 290 L640 190"/><path class="ln" data-l d="M320 290 L640 310"/><path class="ln" data-l d="M320 290 L652 420"/>
+        <g class="dw"><rect x="640" y="38" width="104" height="66" rx="5" fill="#fff"/><path d="M692 104v16M670 122h44"/></g><text x="770" y="80">7А сыныбы</text>
+        <g class="dw"><rect x="640" y="158" width="104" height="66" rx="5" fill="#fff"/><path d="M692 224v16M670 242h44"/></g><text x="770" y="200">8Б сыныбы</text>
+        <g class="dw"><rect x="640" y="278" width="104" height="66" rx="5" fill="#fff"/><path d="M692 344v16M670 362h44"/></g><text x="770" y="320">9А сыныбы</text>
+        <g class="dw"><rect x="652" y="384" width="54" height="84" rx="9" fill="#fff"/><path d="M670 394h18M676 456h6"/></g><text x="770" y="432">Оқушы телефоны</text>
+      </svg>
+      <div class="tcard" data-tcard>
+        <div class="wm" data-wm></div>
+        <h4 data-kk="1-тапсырма · Тест" data-ru="Задание 1 · Тест">1-тапсырма · Тест</h4>
+        <div class="q" data-kk="Орташа мәнді қай функция есептейді?" data-ru="Какая функция вычисляет среднее значение?">Орташа мәнді қай функция есептейді?</div>
+        <div style="display:flex;gap:10px;align-items:center"><span class="btnx pri" data-kk="Жіберу" data-ru="Отправить">Жіберу</span><span class="tsub" data-kk="Су белгісі: оқушының аты көрінеді, мәтінді көшіруге болмайды" data-ru="Водяной знак: видно имя ученика, текст нельзя скопировать">Су белгісі: оқушының аты көрінеді, мәтінді көшіруге болмайды</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:56px">
+    <div class="board" data-size="64" data-row="КЕМШІЛІКТЕР — АШЫҚ"></div>
+  </div>
+  <div class="housing" style="margin-top:26px">
+    <table class="dep" data-size="46">
+      <tr><th>РЕЙС</th><th>ЖАҒДАЙ</th><th>КҮЙІ</th><th></th></tr>
+      <tr class="wait"><td data-f="X1"></td><td data-f="МАЗМҰН ТЕК 2-ТОҚСАНҒА ТОЛЫҚ"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr class="wait"><td data-f="X2"></td><td data-f="МАЗМҰНДЫ ПӘН МАМАНЫ ТЕКСЕРУІ КЕРЕК"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr class="wait"><td data-f="X3"></td><td data-f="АШЫҚ ЖАУАПТЫ МҰҒАЛІМ ТЕКСЕРЕДІ"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr class="wait"><td data-f="X4"></td><td data-f="AI ҮШІН ИНТЕРНЕТ ПЕН КІЛТ КЕРЕК"></td><td data-f="ІШІНАРА" class="wait"></td><td><span class="lamp wait"></span></td></tr>
+      <tr class="stop"><td data-f="X5"></td><td data-f="БІР НОУТБУККЕ ТӘУЕЛДІ"></td><td data-f="ТӘУЕКЕЛ" class="stop"></td><td><span class="lamp stop"></span></td></tr>
+      <tr class="stop"><td data-f="X6"></td><td data-f="РЕЗЕРВТІК КӨШІРМЕ АВТОМАТТЫ ЕМЕС"></td><td data-f="ЖОҚ" class="stop"></td><td><span class="lamp stop"></span></td></tr>
+      <tr class="stop"><td data-f="X7"></td><td data-f="СКРИНШОТТЫ ТОЛЫҚ БӨГЕУ МҮМКІН ЕМЕС"></td><td data-f="ЖОҚ" class="stop"></td><td><span class="lamp stop"></span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:60px">
+    <div class="board" data-size="64" data-row="КЕЛЕСІ РЕЙСТЕР"></div>
+  </div>
+  <div class="housing" style="margin-top:30px">
+    <table class="dep" data-size="54">
+      <tr><th>КЕЗЕК</th><th>ҚАДАМ</th><th>КҮЙІ</th></tr>
+      <tr class="hl"><td data-f="1"></td><td data-f="ПИЛОТ: БІР СЫНЫП, БІР ТОҚСАН"></td><td data-f="ОТЫРҒЫЗУ" class="go"></td></tr>
+      <tr><td data-f="2"></td><td data-f="1, 3, 4-ТОҚСАН МАЗМҰНЫ"></td><td data-f="КҮТУДЕ" class="dim"></td></tr>
+      <tr><td data-f="3"></td><td data-f="МЕКТЕП СЕРВЕРІНЕ КӨШІРУ"></td><td data-f="КҮТУДЕ" class="dim"></td></tr>
+      <tr><td data-f="4"></td><td data-f="АВТОМАТТЫ РЕЗЕРВТІК КӨШІРМЕ"></td><td data-f="КҮТУДЕ" class="dim"></td></tr>
+      <tr><td data-f="5"></td><td data-f="ӘРІПТЕСТЕРМЕН БӨЛІСУ, СЕМИНАР"></td><td data-f="КҮТУДЕ" class="dim"></td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="housing" style="margin-top:150px;padding:40px">
+    <div class="board" data-size="150" data-row="СҰРАҚТАР?"></div>
+    <div class="board go" data-size="64" data-row="РАХМЕТ" style="margin-top:28px"></div>
+  </div>
+  <p class="note" style="margin-top:40px">Жоба бір папка: кез келген мұғалім өз компьютерінде <b>start.command</b> / <b>start.bat</b> арқылы іске қоса алады.</p>
+</section>
+
+<div class="top"><span class="brand">INFOLAB <i>·</i> ҚОРҒАУ</span><span class="right"><span class="clock" id="clock"></span><span id="ctr"></span></span></div>
+<div class="foot"><span>МҰҒАЛІМДЕР АЛДЫНДА ҚОРҒАУ</span><span><kbd>←</kbd><kbd>→</kbd> АУЫСТЫРУ · <kbd>R</kbd> ДЕМОНЫ ҚАЙТАЛАУ · <kbd>F</kbd> ТОЛЫҚ ЭКРАН</span></div>
+</div>
+
+<script>
+(() => {
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+const STILL = /[?&]still/.test(location.search);  // ?still — анимациясыз соңғы күй (скриншот үшін)
+const RM = STILL || matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(STILL) document.documentElement.classList.add('still');
+const CHARS = 'АӘБВГҒДЕЖЗИЙКҚЛМНҢОӨПРСТУҰҮФХҺЦЧШЫІЭЮЯ0123456789';
+let timers = [];
+const later = (fn, ms) => { if(STILL) return fn(); const t = setTimeout(fn, ms); timers.push(t); return t; };
+const clear = () => { timers.forEach(clearTimeout); timers = []; };
+let cur = 0;
+
+// 4:3 проекторда сахна 1600×1200 болады: мәтін ~20% үлкен шығады
+let K = 1;
+function fit(){
+  const narrow = innerWidth / innerHeight < 1.5, W = narrow ? 1600 : 1920, H = narrow ? 1200 : 1080;
+  stage.classList.toggle('narrow', narrow); stage.style.width = W + 'px'; stage.style.height = H + 'px';
+  const k = narrow ? 0.88 : 1; if(k !== K){ K = k; if(slides[cur]) { prep(slides[cur]); play(slides[cur]); } }
+  stage.style.transform = `translate(-50%,-50%) scale(${Math.min(innerWidth / W, innerHeight / H)})`;
+}
+addEventListener('resize', fit);
+
+// Қақпақша қатары: әр таңба — бір ұяшық
+function build(el, text, size){
+  if(el.tagName === 'TD'){ el.textContent = ''; el = el.appendChild(document.createElement('div')); }  // кесте ұяшығы flex болмауы керек
+  el.style.fontSize = Math.round(size * K) + 'px'; el.classList.add('row'); el.textContent = '';
+  el.setAttribute('aria-label', text.trim());
+  for(const c of text){ const s = document.createElement('span'); s.className = 'ch'; s.setAttribute('aria-hidden', 'true'); const b = document.createElement('b'); b.textContent = ' '; s.appendChild(b); s.dataset.to = c; el.appendChild(s); }
+}
+// Аудару: әр ұяшық бірнеше кездейсоқ әріптен өтіп, өз әрпіне тоқтайды
+function flap(el, delay){
+  el.querySelectorAll('.ch').forEach((s, i) => {
+    const to = s.dataset.to, b = s.firstChild;
+    if(RM){ b.textContent = to; return; }
+    let n = to === ' ' ? 1 : 3 + Math.floor(Math.random() * 6);
+    b.textContent = ' ';
+    const step = () => {
+      n--; s.classList.remove('t'); void s.offsetWidth; s.classList.add('t');
+      b.textContent = n <= 0 ? to : CHARS[Math.floor(Math.random() * CHARS.length)];
+      if(n > 0) later(step, 62);
+    };
+    later(step, delay + i * 16);
+  });
+}
+function prep(sl){
+  sl.querySelectorAll('.board').forEach(el => build(el, el.dataset.row, +el.dataset.size));
+  sl.querySelectorAll('table.dep').forEach(t => t.querySelectorAll('[data-f]').forEach(td => build(td, td.dataset.f, +t.dataset.size)));
+}
+function play(sl){
+  let d = 120;
+  sl.querySelectorAll('.board').forEach(el => { flap(el, d); d += 260; });
+  sl.querySelectorAll('table.dep tr').forEach((tr, r) => tr.querySelectorAll('[data-f]').forEach(td => flap(td, d + r * 90)));
+  sl.querySelectorAll('.lamp').forEach((l, i) => { l.style.transition = 'none'; l.style.opacity = RM ? 1 : 0; later(() => { l.style.transition = 'opacity .3s'; l.style.opacity = 1; }, d + 600 + i * 140); });
+  const demo = sl.dataset.demo; if(demo) DEMOS[demo](sl, RM ? 0 : d + 500);
+}
+
+const $ = (sl, q) => sl.querySelector(q), $$ = (sl, q) => [...sl.querySelectorAll(q)];
+const DEMOS = {
+  auto(sl, t){
+    const cells = $$(sl, '.cell'), opts = $$(sl, '.opt'), code = $(sl, '[data-code]'), tests = $$(sl, '.tests span'), file = $(sl, '[data-file]'), lis = $$(sl, '.chk li'), fs = $(sl, '[data-fs]'), xp = $(sl, '[data-xp]');
+    cells.forEach((c, k) => { c.className = 'cell'; c.textContent = k + 1; }); opts.forEach(o => o.classList.remove('sel')); tests.forEach(x => x.className = ''); lis.forEach(l => l.classList.remove('v'));
+    fs.textContent = ''; code.textContent = ''; file.style.opacity = 0; file.style.transform = 'translateY(-40px)'; xp.textContent = 'XP 1240';
+    cells[0].classList.add('cur');
+    later(() => opts[1].classList.add('sel'), t + 300);
+    later(() => { cells[0].className = 'cell ok'; cells[0].textContent = '10'; cells[1].classList.add('cur'); xp.textContent = 'XP 1250'; }, t + 900);
+    const src = 's = input()\nprint(len(s))';
+    let i = 0; const typ = () => { code.innerHTML = src.slice(0, i).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '<span class="cur"></span>'; if(i++ < src.length) later(typ, 55); };
+    later(typ, t + 1400);
+    later(() => tests[0].className = 'p', t + 2600);
+    later(() => tests[1].className = 'p', t + 3000);
+    later(() => { cells[1].className = 'cell ok'; cells[1].textContent = '10'; cells[2].classList.add('cur'); xp.textContent = 'XP 1260'; }, t + 3200);
+    later(() => { file.style.opacity = 1; file.style.transform = 'none'; }, t + 3800);
+    lis.forEach((l, k) => later(() => l.classList.add('v'), t + 4500 + k * 450));
+    later(() => { fs.textContent = '2 / 3'; cells[2].className = 'cell part'; cells[2].textContent = '7'; xp.textContent = 'XP 1270'; }, t + 6000);
+  },
+  journal(sl, t){
+    const marks = [[10, 10, 7, 9], [9, 8, 10, 10], [10, 6, '…', 8], [7, 10, 9, 10]];
+    const ms = $$(sl, '.m'), ps = $$(sl, '[data-p]'), qs = $$(sl, '.qs'), g = $(sl, '[data-grade]');
+    ms.forEach(m => { m.className = 'm'; m.textContent = ''; }); ps.forEach(p => p.textContent = ''); qs.forEach(q => [...q.children].forEach(s => s.classList.remove('on'))); g.style.outline = '';
+    ms.forEach((m, k) => { const v = marks[Math.floor(k / 4)][k % 4]; later(() => { m.textContent = v; m.className = 'm in ' + (v === '…' ? 'pd' : v >= 8 ? 'hi' : v >= 5 ? 'mid' : 'lo'); }, t + k * 160); });
+    const pct = r => Math.round(r.filter(x => typeof x === 'number').reduce((a, b) => a + b, 0) / (r.length * 10) * 100) + '%';
+    marks.forEach((r, k) => later(() => ps[k].textContent = pct(r), t + 2800 + k * 120));
+    later(() => qs[0].children[2].classList.add('on'), t + 3800);
+    later(() => qs[1].children[1].classList.add('on'), t + 4300);
+    later(() => g.style.outline = '3px solid #ffd166', t + 4700);
+    later(() => { const m = ms[10]; m.textContent = '8'; m.className = 'm in hi'; ps[2].textContent = pct([10, 6, 8, 8]); }, t + 5200);
+  },
+  plan(sl, t){
+    const segs = $$(sl, '[data-tl] div'), sum = $(sl, '[data-sum]'), st = $$(sl, '.st'), outs = $$(sl, '.outs span');
+    segs.forEach(s => s.style.width = 0); st.forEach(s => s.classList.remove('in')); outs.forEach(o => o.classList.remove('lit')); sum.textContent = '0′';
+    const mins = [7, 26, 7]; let acc = 0;
+    segs.forEach((s, k) => later(() => { s.style.width = s.dataset.w + '%'; acc += mins[k]; sum.textContent = acc + (acc === 40 ? '′ ✓' : '′'); }, t + k * 700));
+    st.forEach((s, k) => later(() => s.classList.add('in'), t + 2200 + k * 260));
+    outs.forEach((o, k) => later(() => o.classList.add('lit'), t + 3600 + k * 450));
+    const pj = $(sl, '[data-proj]'); pj.classList.remove('in'); later(() => pj.classList.add('in'), t + 5200);
+  },
+  net(sl, t){
+    const xs = $$(sl, '[data-x]'), lns = $$(sl, '[data-l]'), wm = $(sl, '[data-wm]'), lang = $(sl, '[data-lang]'), rows = $$(sl, '.board[data-alt]');
+    xs.forEach(x => x.style.opacity = 0); lns.forEach(l => l.classList.remove('live')); wm.classList.remove('in'); lang.textContent = 'ҚАЗ';
+    $$(sl, '[data-tcard] [data-kk]').forEach(n => n.textContent = n.dataset.kk);
+    later(() => xs.forEach(x => x.style.opacity = 1), t + 300);
+    lns.forEach((l, k) => later(() => l.classList.add('live'), t + 900 + k * 250));
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160"><text x="16" y="96" transform="rotate(-22 150 80)" font-family="sans-serif" font-size="18" fill="#16242a" opacity=".16">Асанов А. · 03.11.2026</text></svg>';
+    wm.style.backgroundImage = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+    later(() => wm.classList.add('in'), t + 2400);
+    let ru = false;
+    const swap = () => {
+      ru = !ru; lang.textContent = ru ? 'РУС' : 'ҚАЗ';
+      $$(sl, '[data-tcard] [data-kk]').forEach(n => n.textContent = ru ? n.dataset.ru : n.dataset.kk);
+      rows.forEach((el, k) => { const w = Math.max(el.dataset.row.length, el.dataset.alt.length); build(el, (ru ? el.dataset.alt : el.dataset.row).padEnd(w, ' '), +el.dataset.size); flap(el, k * 160); });
+      if(!STILL) later(swap, 3200);
+    };
+    if(!STILL) later(swap, t + 3000); else if(/[?&]ru\b/.test(location.search)) swap();  // ?still&ru — орысша күйдің скриншоты
+  }
+};
+
+const ctr = document.getElementById('ctr');
+function show(i){
+  i = Math.max(0, Math.min(slides.length - 1, i)); clear();
+  slides.forEach((s, k) => s.classList.toggle('on', k === i)); cur = i;
+  prep(slides[i]); play(slides[i]);
+  build(ctr, String(i + 1).padStart(2, '0') + '/' + String(slides.length).padStart(2, '0'), 30); flap(ctr, 0);
+  history.replaceState(null, '', '#' + (i + 1));
+}
+addEventListener('keydown', e => {
+  const k = e.key;
+  if(['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)){ e.preventDefault(); show(cur + 1); }
+  else if(['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)){ e.preventDefault(); show(cur - 1); }
+  else if(k === 'Home') show(0); else if(k === 'End') show(slides.length - 1);
+  else if('rRкК'.includes(k)) show(cur);
+  else if('fFаА'.includes(k)){ document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); }
+});
+addEventListener('click', e => show(cur + (e.clientX > innerWidth / 3 ? 1 : -1)));
+const clock = document.getElementById('clock');
+const tick = () => clock.textContent = new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+tick(); setInterval(tick, 1000);
+fit(); show((parseInt(location.hash.slice(1)) || 1) - 1);
+})();
+</script>
+</body>
+</html>

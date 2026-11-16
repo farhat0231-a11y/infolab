@@ -1,0 +1,80 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Басты бет') }}{% endblock %}
+{% block body %}
+{% if not cls %}
+<div class="card empty"><svg class="ic" aria-hidden="true" style="width:28px;height:28px"><use href="#i-lock"/></svg><h2>{{ tr('Сіз әлі сыныпқа қосылмағансыз') }}</h2><p>{{ tr('Мұғаліміңізден сынып кодын сұраңыз.') }}</p></div>
+{% else %}
+{% set first_name = g.user.name.split()[-1] if g.user.name.split()|length > 1 else g.user.name %}
+<div style="margin-bottom:16px">
+  <h1 style="margin:0">{{ tr('Сәлем, {name}!').format(name=first_name) }}</h1>
+  <div class="muted">{{ tr('{name} сыныбы · {n}-сынып').format(name=cls.name, n=cls.grade) }}</div>
+</div>
+
+{% if penalties %}<section class="card pen-note" role="status" style="margin-bottom:16px;border-color:var(--bad)">
+  <h2 style="margin:0 0 8px;display:flex;align-items:center;gap:8px;color:var(--bad)"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>{{ tr('Мұғалімнің айыппұлы') }}</h2>
+  <ul class="list" style="margin:0">{% for p in penalties %}<li><span class="grow">{{ p.reason }}{% if p.lesson_id %} · <span class="muted">{{ (p.title_ru if view_lang() == 'ru' and p.title_ru else p.title) }}</span>{% endif %}</span>
+    <span class="num">{% if p.xp %}<b class="badge bad">−{{ p.xp }} XP</b>{% endif %} {% if p.pts %}<b class="badge bad">−{{ p.pts|fmt }} {{ tr('балл') }}</b>{% endif %}</span>
+    <span class="muted small num">{{ p.created[:16] }}</span></li>{% endfor %}</ul>
+</section>{% endif %}
+<section class="card player" aria-label="{{ tr('Менің прогресім') }}">
+  <div class="lvl num" title="{{ tr(level.name) }}">{{ level.num }}</div>
+  <div>
+    <div><b>{{ tr('{n}-деңгей').format(n=level.num) }}</b> <span class="muted">· {{ tr(level.name) }}</span></div>
+    <div class="bar gold" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ level.progress }}"><i style="width:{{ level.progress }}%"></i></div>
+    {% if level.next %}<div class="muted small num" style="margin-top:4px">{{ tr('Келесі деңгейге {n} XP').format(n=level.next - xp) }}</div>{% endif %}
+  </div>
+  <div class="chipset">
+    <span class="stat-chip"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><b>{{ xp }}</b> XP</span>
+    <span class="stat-chip"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><b>{{ today_xp }}</b> {{ tr('Бүгін жинағаның') }}</span>
+    <span class="stat-chip"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg><b>{{ streak }}</b> {{ tr('Күн қатарынан') }}</span>
+  </div>
+</section>
+
+{% set ns = namespace(go=None, going=False) %}
+{% for L, r, nt in items %}{% if not ns.going and nt and r.done > 0 and r.done < nt %}{% set ns.go = (L, r, nt) %}{% set ns.going = True %}{% endif %}{% endfor %}
+{% if not ns.go %}{% for L, r, nt in items %}{% if not ns.go and nt and r.done == 0 %}{% set ns.go = (L, r, nt) %}{% endif %}{% endfor %}{% endif %}
+{% if ns.go %}{% set gL, gr, gnt = ns.go %}
+<section class="resume" aria-label="{{ tr('Жалғастыру') }}">
+  <div class="grow" style="min-width:0">
+    <div class="muted small">{{ tr('Жалғастыру') if gr.done else tr('Бастау') }}</div>
+    <h2>{{ gL.title }}</h2>
+  </div>
+  <span class="prog"><span class="pips" role="img" aria-label="{{ gr.done }}/{{ gnt }}">{% for i in range(gnt) %}<i class="pip {{ 'done' if i < gr.done - gr.pending else 'wait' if i < gr.done }}"></i>{% endfor %}</span><span class="num">{{ gr.done }}/{{ gnt }}</span></span>
+  <a class="btn" href="{{ url_for('lesson', lid=gL.id) }}">{{ tr('Жалғастыру') if gr.done else tr('Бастау') }}<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></a>
+</section>
+{% endif %}
+
+<div class="grid side" style="margin-top:16px">
+  <div class="card">
+    <h2>{{ tr('Сабақтар') }}</h2>
+    {% if not items %}<div class="empty">{{ tr('Мұғалім әлі сабақ ашқан жоқ.') }}</div>{% endif %}
+    <ul class="lessons">
+    {% for L, r, nt in items %}
+      <li>
+        <div class="t">
+          <a href="{{ url_for('lesson', lid=L.id) }}">{{ L.title }}</a>
+          <div class="muted small meta">{% if L.kind == 'block' %}<span class="badge blue"><svg class="ic" aria-hidden="true"><use href="#i-blocks"/></svg>{{ tr('Тапсырмалар блогы') }}</span>{% endif %}<span>{{ tr('{n}-тоқсан').format(n=L.quarter) }} · {{ tr(L.section) }}</span>{% if L.bjb %}<span class="badge warn">{{ tr('БЖБ') }}</span>{% endif %}{% if L.due %}<span class="badge {{ 'bad' if L.due < today() else 'warn' }}"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>{{ L.due|dmy }}</span>{% endif %}</div>
+        </div>
+        {% if nt %}<span class="prog"><span class="pips" role="img" aria-label="{{ r.done }}/{{ nt }}">{% for i in range(nt) %}<i class="pip {{ 'done' if i < r.done - r.pending else 'wait' if i < r.done }}"></i>{% endfor %}</span><span class="num">{{ r.done }}/{{ nt }}</span></span>{% else %}<span></span>{% endif %}
+        <div class="act">
+          {% if r.percent is not none %}{% set m = mark10(r.percent) %}<span class="m {{ 'prov' if r.done < nt else 'hi' if m>=8 else 'mid' if m>=5 else 'lo' }}" title="{{ r.score|fmt }}/{{ r.max|fmt }}{% if r.done < nt %} · {{ tr('аралық баға') }}{% endif %}">{{ m }}</span>
+          {% elif nt %}<a class="btn sm primary" href="{{ url_for('lesson', lid=L.id) }}">{{ tr('Бастау') }}</a>
+          {% else %}<span class="muted small">{{ tr('Теория') }}</span>{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  <div class="card">
+    <div class="spread"><h2 style="margin:0">{{ tr('Апта көшбасшылары') }}</h2><a class="small" href="{{ url_for('leaderboard_page') }}">{{ tr('Барлығы →') }}</a></div>
+    <ul class="list" style="margin-top:8px">
+    {% for b in board %}
+      <li class="{{ 'me' if b.id == g.user.id }}" style="padding-left:6px;padding-right:6px">
+        <span class="rank {{ 'r%d' % loop.index if loop.index <= 3 }}">{{ loop.index }}</span>
+        <span class="grow">{{ b.name }}</span><span class="badge xp">{{ b.xp }}</span>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

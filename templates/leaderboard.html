@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Рейтинг') }}{% endblock %}
+{% block body %}
+<div class="spread"><h1>{{ tr('Рейтинг') }} · {{ cls.name }}</h1>
+<div class="seg" role="group">{% set base = url_for('leaderboard_page', class_id=cls.id if g.user.role=='teacher' else None) %}
+  {% for k, v in [('day','Бүгін'),('week','Апта'),('all','Барлығы')] %}
+  <a class="{{ 'on' if period==k }}" href="{{ url_for('leaderboard_page', p=k, class_id=cls.id if g.user.role=='teacher' else None) }}">{{ tr(v) }}</a>{% endfor %}
+</div></div>
+<div class="card" style="max-width:720px">
+<ul class="list">
+{% for r in rows %}
+  <li class="{{ 'me' if r.id == g.user.id }}" style="padding-left:8px;padding-right:8px">
+    <span class="rank {{ 'r%d' % loop.index if loop.index <= 3 }}">{{ loop.index }}</span>
+    <span class="grow">{{ r.name }}{% if loop.index == 1 and r.xp %} <svg class="ic" aria-hidden="true" style="color:var(--warn)"><use href="#i-trophy"/></svg>{% endif %}</span>
+    <span class="badge xp"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>{{ r.xp }}</span>
+  </li>
+{% else %}<li class="empty">{{ tr('Әзірге ешкім жоқ') }}</li>{% endfor %}
+</ul></div>
+{% endblock %}
